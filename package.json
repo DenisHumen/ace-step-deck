@@ -1,7 +1,7 @@
 {
   "name": "ace-step-deck",
   "productName": "AceDeck",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AceDeck — desktop studio & control deck for ACE-Step 1.5 local AI music generation: one-click install, generation queue, batch songs, cover & repaint, engine control, stability test and Claude MCP.",
   "author": {
     "name": "DenisHumen",
@@ -103,6 +103,7 @@
     "esbuild": "^0.28.2",
     "lucide-react": "^1.48.0",
     "motion": "^13.4.4",
+    "music-metadata": "^11.16.1",
     "png-to-ico": "^3.0.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

@@ -2,6 +2,7 @@
 import { app } from 'electron'
 import { existsSync, promises as fsp } from 'node:fs'
 import { join } from 'node:path'
+import { mergeClaudeDesktopConfig } from '@shared/logic'
 
 export function mcpServerPath(): string {
   return app.isPackaged ? join(process.resourcesPath, 'mcp', 'server.cjs') : join(app.getAppPath(), 'out', 'mcp', 'server.cjs')
@@ -40,21 +41,12 @@ export async function mcpConfig(): Promise<McpConfig> {
 }
 
 /** Merge the AceDeck server into claude_desktop_config.json (keeps a .bak copy). */
-export async function installIntoClaudeDesktop(): Promise<string> {
-  const file = desktopConfigPath()
+export async function installIntoClaudeDesktop(file = desktopConfigPath()): Promise<string> {
   const cfg = await mcpConfig()
-  let current: any = {}
-  if (existsSync(file)) {
-    const raw = await fsp.readFile(file, 'utf8')
-    await fsp.writeFile(`${file}.bak`, raw, 'utf8')
-    try {
-      current = JSON.parse(raw)
-    } catch {
-      throw new Error('claude_desktop_config.json is not valid JSON — fix it or add the snippet manually')
-    }
-  }
-  current.mcpServers = { ...(current.mcpServers ?? {}), acedeck: { command: cfg.command, args: cfg.args, env: cfg.env } }
+  const raw = existsSync(file) ? await fsp.readFile(file, 'utf8') : null
+  const merged = mergeClaudeDesktopConfig(raw, { command: cfg.command, args: cfg.args, env: cfg.env })
+  if (raw !== null) await fsp.writeFile(`${file}.bak`, raw, 'utf8')
   await fsp.mkdir(join(file, '..'), { recursive: true })
-  await fsp.writeFile(file, JSON.stringify(current, null, 2), 'utf8')
+  await fsp.writeFile(file, merged, 'utf8')
   return file
 }

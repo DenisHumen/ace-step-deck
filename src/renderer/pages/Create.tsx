@@ -623,7 +623,7 @@ function LiveStrip() {
           <span className="w-12 text-right font-mono text-[12px] text-muted">{Math.round(job.progress * 100)}%</span>
         </div>
         <div className="mt-1 truncate text-[12px] text-dim">
-          {stageLabel(job.stage, t)} · {t('queue.songs', { done: job.songsDone, total: job.spec.count })}
+          {stageLabel(job.stage, t)} · {t('queue.songs', { done: job.songsDone, total: job.spec.count, n: job.spec.count })}
           {job.etaSeconds ? ` · ${t('queue.eta', { t: fmtEta(job.etaSeconds, lang) })}` : ''}
         </div>
       </div>
@@ -648,7 +648,7 @@ function RecentCreations() {
           {recent.map((tr) => (
             <button key={tr.id} onClick={() => play(tr.id, recent.map((x) => x.id))} className="group w-[190px] shrink-0 text-left">
               <TrackCover id={tr.id} className="aspect-[4/5] w-full shadow-[0_20px_40px_-20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-[-1deg]">
-                <span className="absolute top-3 left-3 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-white/90 uppercase backdrop-blur">{tr.taskType === 'text2music' ? 'song' : tr.taskType}</span>
+                <span className="absolute top-3 left-3 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-white/90 uppercase backdrop-blur">{t(`library.badge.${tr.taskType}`)}</span>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-3 pt-10">
                   <div className="truncate font-display text-[14px] font-semibold text-white">{tr.title}</div>
                   <div className="truncate text-[11.5px] text-white/65">{[tr.bpm && `${tr.bpm} BPM`, tr.keyscale, fmtDuration(tr.durationSec)].filter(Boolean).join(' · ')}</div>

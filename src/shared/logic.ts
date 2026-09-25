@@ -43,3 +43,27 @@ export function slugify(s: string, max = 40): string {
     .replace(/-+$/g, '')
   return out || 'track'
 }
+
+export interface McpServerEntry {
+  command: string
+  args: string[]
+  env: Record<string, string>
+}
+
+/**
+ * Merge the AceDeck MCP server into a claude_desktop_config.json text, keeping every other
+ * setting and server untouched. Throws on invalid JSON so the user's file is never clobbered.
+ */
+export function mergeClaudeDesktopConfig(existing: string | null, entry: McpServerEntry, name = 'acedeck'): string {
+  let cfg: any = {}
+  if (existing && existing.trim()) {
+    try {
+      cfg = JSON.parse(existing)
+    } catch {
+      throw new Error('claude_desktop_config.json is not valid JSON — fix it or add the snippet manually')
+    }
+    if (typeof cfg !== 'object' || cfg === null || Array.isArray(cfg)) throw new Error('claude_desktop_config.json must contain a JSON object')
+  }
+  cfg.mcpServers = { ...(cfg.mcpServers ?? {}), [name]: entry }
+  return JSON.stringify(cfg, null, 2)
+}

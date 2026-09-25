@@ -179,6 +179,7 @@ npm install
 node node_modules/electron/install.js   # Electron 44 скачивает бинарник по запросу
 npm run dev                              # Vite + esbuild watch + Electron
 npm test                                 # юнит-тесты (vitest)
+node tests/e2e.mjs                       # сквозные тесты с настоящей нейросетью (нужен `npm run dev`)
 npm run dist                             # проверка типов + сборка + NSIS-установщик и portable → release/
 ```
 

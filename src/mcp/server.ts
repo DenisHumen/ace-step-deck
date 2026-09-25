@@ -101,7 +101,7 @@ async function waitJob(id: string, timeoutSec: number) {
   }
 }
 
-const server = new McpServer({ name: 'acedeck', version: '1.0.0' })
+const server = new McpServer({ name: 'acedeck', version: '1.0.1' })
 
 server.registerTool(
   'acedeck_status',

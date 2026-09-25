@@ -62,7 +62,7 @@ export function QueuePage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-4 gap-4 max-[1100px]:grid-cols-2">
+      <div className="mb-6 grid grid-cols-4 gap-4 max-[980px]:grid-cols-2">
         {stats.map((s) => (
           <Card key={s.label} className="!py-4">
             <div className="label">{s.label}</div>
@@ -137,7 +137,7 @@ function ActiveJob({ job, paused }: { job: Job; paused: boolean }) {
           </div>
           <h2 className="mt-1 truncate font-display text-[24px] font-semibold">{job.title}</h2>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted">
-            <span>{t('queue.songs', { done: job.songsDone, total: job.spec.count })}</span>
+            <span>{t('queue.songs', { done: job.songsDone, total: job.spec.count, n: job.spec.count })}</span>
             <span>{stageLabel(job.stage, t)}</span>
             {job.etaSeconds ? <span>{t('queue.eta', { t: fmtEta(job.etaSeconds, lang) })}</span> : null}
           </div>
@@ -183,7 +183,7 @@ function JobRow({ job, index, total }: { job: Job; index: number; total: number 
         <div className="mt-1 flex items-center gap-3 text-[12px] text-dim">
           <span>{t(`queue.status.${job.status}`)}</span>
           <span>{fmtDate(job.createdAt, lang)}</span>
-          {job.status !== 'pending' && <span>{t('queue.songs', { done: job.songsDone, total: job.spec.count })}</span>}
+          {job.status !== 'pending' && <span>{t('queue.songs', { done: job.songsDone, total: job.spec.count, n: job.spec.count })}</span>}
           {job.error && <span className="truncate text-rose">{job.error}</span>}
         </div>
         {job.status === 'failed' || job.status === 'cancelled' || job.status === 'done' ? null : job.songsDone > 0 ? <ProgressBar value={job.progress} thin className="mt-2" /> : null}

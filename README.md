@@ -161,6 +161,7 @@ npm install
 node node_modules/electron/install.js   # Electron 44 downloads its binary on demand
 npm run dev                              # Vite + esbuild watch + Electron
 npm test                                 # unit tests (vitest)
+node tests/e2e.mjs                       # end-to-end suite against the real engine (needs `npm run dev`)
 npm run dist                             # typecheck + build + NSIS installer & portable exe → release/
 ```
 

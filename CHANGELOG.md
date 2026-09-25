@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.1 — 2026-09-26
+
+Fixes found by a new end-to-end test suite (`tests/e2e.mjs`) run against the real engine.
+
+- **Cover / Repaint / Stems now work**: ACE-Step rejects absolute file paths, so AceDeck uploads the source and reference audio as `multipart/form-data` (all parameters travel typed in `param_obj`). Applies to the UI, the automation API and the MCP `transform_audio` tool.
+- **Per-job model choice is honoured**: the engine starts with `ACESTEP_ON_DEMAND_MODEL_LOAD=true` and loads models at startup (the only path that lets ACE-Step swap DiT models later). Picking SFT/Base/XL in *Create* — and every stem task, which needs Base — no longer silently falls back to turbo.
+- **Real durations** for cover/repaint/stem tracks (the engine reports `N/A`): read from the audio file; existing library entries are repaired on start.
+- Engine start waits up to 20 min (first start may download a model) and shows *Loading models…* while the server loads them.
+- Library type filters and card badges are localized; Russian plural in "N of M songs".
+- Claude Desktop config merge extracted into a tested pure function (keeps other servers, refuses to overwrite invalid JSON, writes a `.bak`).
+- Unit tests: 14; new E2E scenarios: AI helpers, cover, repaint, model download progress, extract/lego/complete stems, per-job model switching, queue reordering.
+
 ## 1.0.0 — 2026-09-26
 
 First public release.

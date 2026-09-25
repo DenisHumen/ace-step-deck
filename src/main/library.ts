@@ -3,6 +3,7 @@ import { existsSync, promises as fsp } from 'node:fs'
 import { basename, extname, join } from 'node:path'
 import type { Track } from '@shared/types'
 import { emit, readJson, writeJson } from './util'
+import { numericOrNull, probeDuration } from './media'
 
 const indexFile = () => join(app.getPath('userData'), 'library.json')
 
@@ -14,6 +15,27 @@ class Library {
     // Drop entries whose audio was deleted outside the app.
     this.tracks = saved.filter((t) => existsSync(t.file))
     if (this.tracks.length !== saved.length) await this.save()
+    void this.repairMetadata()
+  }
+
+  /** Older entries may hold "N/A" from the engine; read the real duration from the file. */
+  private async repairMetadata(): Promise<void> {
+    let changed = false
+    for (const t of this.tracks) {
+      if (numericOrNull(t.durationSec) === null) {
+        t.durationSec = await probeDuration(t.file)
+        changed = true
+      }
+      if (t.bpm !== null && numericOrNull(t.bpm) === null) {
+        t.bpm = null
+        changed = true
+      }
+      if (t.keyscale === 'N/A') {
+        t.keyscale = ''
+        changed = true
+      }
+    }
+    if (changed) await this.save()
   }
 
   list(): Track[] {

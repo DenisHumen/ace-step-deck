@@ -71,7 +71,7 @@ export function LibraryPage() {
             </Chip>
             {types.map((ty) => (
               <Chip key={ty} active={type === ty} onClick={() => setType(ty)}>
-                {ty}
+                {t(`library.type.${ty}`)}
               </Chip>
             ))}
           </div>

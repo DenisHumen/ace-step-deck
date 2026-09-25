@@ -6,6 +6,7 @@ import { DEFAULT_PARAMS } from '@shared/constants'
 import { jobTitle, slugify, smoothProgress } from '@shared/logic'
 import { engine } from './engine'
 import { library } from './library'
+import { numericOrNull, probeDuration } from './media'
 import { getSettings } from './settings'
 import { emit, readJson, sleep, throttle, uid, writeJson } from './util'
 
@@ -316,13 +317,13 @@ class QueueManager {
           file: dest,
           format: fmt,
           sizeBytes: size,
-          durationSec: e.metas?.duration ?? body.audio_duration ?? null,
+          durationSec: numericOrNull(e.metas?.duration) ?? (await probeDuration(dest)) ?? body.audio_duration ?? null,
           createdAt: Date.now(),
           caption: e.prompt || body.prompt || '',
           lyrics: e.lyrics || body.lyrics || '',
-          bpm: e.metas?.bpm ?? null,
-          keyscale: e.metas?.keyscale ?? '',
-          timesignature: e.metas?.timesignature ?? '',
+          bpm: numericOrNull(e.metas?.bpm),
+          keyscale: e.metas?.keyscale && e.metas.keyscale !== 'N/A' ? e.metas.keyscale : '',
+          timesignature: e.metas?.timesignature && e.metas.timesignature !== 'N/A' ? String(e.metas.timesignature) : '',
           genres: e.metas?.genres && e.metas.genres !== 'N/A' ? e.metas.genres : '',
           language: body.vocal_language ?? '',
           seed: seeds[k - 1] ?? seeds[0] ?? '',

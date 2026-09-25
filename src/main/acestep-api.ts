@@ -1,6 +1,6 @@
 // Thin client for the ACE-Step 1.5 REST API (acestep-api). See docs/en/API.md in ACE-Step.
 import { createWriteStream, promises as fsp } from 'node:fs'
-import { dirname } from 'node:path'
+import { basename, dirname } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { GenerationParams, SampleResult } from '@shared/types'
@@ -97,7 +97,23 @@ export class AceStepApi {
   }
 
   async releaseTask(params: Partial<GenerationParams>): Promise<string> {
-    const data = await this.post<{ task_id: string }>('/release_task', params, 60000)
+    const { src_audio_path, reference_audio_path, ...rest } = params
+    let data: { task_id: string }
+    if (src_audio_path || reference_audio_path) {
+      // ACE-Step rejects absolute paths outside its temp dir, so local audio is uploaded as
+      // multipart. All other fields travel in `param_obj` (JSON keeps bools/numbers/lists typed).
+      const form = new FormData()
+      form.append('param_obj', JSON.stringify(rest))
+      const attach = async (field: string, path: string) => {
+        const buf = await fsp.readFile(path)
+        form.append(field, new Blob([buf]), basename(path))
+      }
+      if (src_audio_path) await attach('src_audio', src_audio_path)
+      if (reference_audio_path) await attach('reference_audio', reference_audio_path)
+      data = await this.req<{ task_id: string }>('/release_task', { method: 'POST', body: form, timeoutMs: 120000 })
+    } else {
+      data = await this.post<{ task_id: string }>('/release_task', rest, 60000)
+    }
     if (!data?.task_id) throw new Error('No task_id returned')
     return data.task_id
   }

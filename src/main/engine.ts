@@ -133,7 +133,12 @@ export class EngineManager {
       ACESTEP_CONFIG_PATH: s.ditModel,
       ACESTEP_LM_MODEL_PATH: s.lmModel,
       ACESTEP_LM_BACKEND: s.lmBackend === 'auto' ? (insp.hasTriton ? 'vllm' : 'pt') : s.lmBackend,
-      ACESTEP_NO_INIT: 'true',
+      // Load models during server startup: only that path captures the init kwargs ACE-Step
+      // needs for on-demand model switching (lazy /v1/init does not).
+      ACESTEP_NO_INIT: s.preloadModels ? 'false' : 'true',
+      // Without this the server silently renders with the primary model when a job asks for
+      // another DiT (SFT/Base/XL, stems need Base). Safe: AceDeck runs one queue/API worker.
+      ACESTEP_ON_DEMAND_MODEL_LOAD: 'true',
     }
     if (s.initLlm !== 'auto') env.ACESTEP_INIT_LLM = s.initLlm
     if (s.offload !== 'auto') env.ACESTEP_OFFLOAD_TO_CPU = s.offload === 'on' ? 'true' : 'false'
@@ -159,6 +164,7 @@ export class EngineManager {
       onLine: (line, stream) => {
         // Hide uvicorn access lines produced by AceDeck's own polling.
         if (/"(GET|POST) \/(health|query_result|v1\/stats|v1\/models)[^"]*" 200/.test(line)) return
+        if (this.status.state === 'starting' && /Loading primary DiT model|Loading LLM|lazy-loading models/.test(line)) this.set({ state: 'loading' })
         this.log(line, stream)
       },
     })
@@ -180,7 +186,7 @@ export class EngineManager {
     })
 
     // Wait for the HTTP server to come up.
-    const deadline = Date.now() + 4 * 60 * 1000
+    const deadline = Date.now() + 20 * 60 * 1000 // first start may download models
     for (;;) {
       if (!this.child) throw new Error(this.status.lastError ?? 'Engine process exited during start')
       try {
@@ -189,7 +195,7 @@ export class EngineManager {
       } catch {
         if (Date.now() > deadline) {
           await this.doStop()
-          this.set({ state: 'error', lastError: 'Engine did not answer within 4 minutes' })
+          this.set({ state: 'error', lastError: 'Engine did not answer within 20 minutes' })
           throw new Error('Engine start timeout')
         }
         await sleep(1000)

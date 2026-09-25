@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { jobTitle, normalizeSample, slugify, smoothProgress } from '../src/shared/logic'
+import { jobTitle, mergeClaudeDesktopConfig, normalizeSample, slugify, smoothProgress } from '../src/shared/logic'
 import { stageKey } from '../src/renderer/lib/stage'
 import { en } from '../src/renderer/i18n/en'
 import { ru } from '../src/renderer/i18n/ru'
@@ -82,5 +82,29 @@ describe('i18n dictionaries', () => {
     for (const k of Object.keys(en) as (keyof typeof en)[]) {
       expect(vars(ru[k]), k).toBe(vars(en[k]))
     }
+  })
+})
+
+describe('mergeClaudeDesktopConfig', () => {
+  const entry = { command: 'C:/AceDeck/AceDeck.exe', args: ['C:/AceDeck/resources/mcp/server.cjs'], env: { ELECTRON_RUN_AS_NODE: '1' } }
+  it('creates a config when none exists', () => {
+    expect(JSON.parse(mergeClaudeDesktopConfig(null, entry))).toEqual({ mcpServers: { acedeck: entry } })
+    expect(JSON.parse(mergeClaudeDesktopConfig('   ', entry))).toEqual({ mcpServers: { acedeck: entry } })
+  })
+  it('keeps other servers and settings', () => {
+    const existing = JSON.stringify({ globalShortcut: 'Ctrl+Space', mcpServers: { github: { command: 'gh-mcp', args: [] } } })
+    const out = JSON.parse(mergeClaudeDesktopConfig(existing, entry))
+    expect(out.globalShortcut).toBe('Ctrl+Space')
+    expect(out.mcpServers.github).toEqual({ command: 'gh-mcp', args: [] })
+    expect(out.mcpServers.acedeck).toEqual(entry)
+  })
+  it('replaces an older AceDeck entry instead of duplicating it', () => {
+    const existing = JSON.stringify({ mcpServers: { acedeck: { command: 'old.exe', args: [] } } })
+    expect(Object.keys(JSON.parse(mergeClaudeDesktopConfig(existing, entry)).mcpServers)).toEqual(['acedeck'])
+    expect(JSON.parse(mergeClaudeDesktopConfig(existing, entry)).mcpServers.acedeck.command).toBe(entry.command)
+  })
+  it('refuses to overwrite invalid JSON', () => {
+    expect(() => mergeClaudeDesktopConfig('{ broken', entry)).toThrow(/not valid JSON/)
+    expect(() => mergeClaudeDesktopConfig('[1,2]', entry)).toThrow(/JSON object/)
   })
 })
