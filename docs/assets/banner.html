@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: Poppins; font-weight: 400; src: url(../../node_modules/@fontsource/poppins/files/poppins-latin-400-normal.woff2) format('woff2'); }
+  @font-face { font-family: Poppins; font-weight: 500; src: url(../../node_modules/@fontsource/poppins/files/poppins-latin-500-normal.woff2) format('woff2'); }
+  @font-face { font-family: Poppins; font-weight: 600; src: url(../../node_modules/@fontsource/poppins/files/poppins-latin-600-normal.woff2) format('woff2'); }
+  @font-face { font-family: Poppins; font-weight: 700; src: url(../../node_modules/@fontsource/poppins/files/poppins-latin-700-normal.woff2) format('woff2'); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { width: var(--w); height: var(--h); overflow: hidden; background: #07060b; font-family: Poppins, sans-serif; color: #f5f2fc; position: relative; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(110px); }
+  .g1 { width: 760px; height: 560px; left: -140px; top: -260px; background: rgba(240, 67, 198, .55); }
+  .g2 { width: 820px; height: 620px; right: -160px; top: -220px; background: rgba(124, 92, 255, .5); }
+  .g3 { width: 600px; height: 420px; left: 40%; bottom: -330px; background: rgba(83, 210, 255, .22); }
+  .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse at 30% 40%, #000 20%, transparent 75%); }
+  .left { position: absolute; left: var(--pad); top: 50%; transform: translateY(-50%); width: var(--lw); }
+  .brand { display: flex; align-items: center; gap: 22px; }
+  .brand h1 { margin: 0; font-size: var(--title); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .tag { margin-top: 26px; font-size: var(--tag); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+  .tag b { background: linear-gradient(100deg, #ff7ad9, #d58bff 45%, #8f7bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { margin-top: 16px; font-size: var(--sub); color: #b7b0cc; line-height: 1.5; }
+  .pills { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .pill { padding: 8px 16px; border-radius: 999px; font-size: var(--pill); font-weight: 500; color: #efeaff; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); }
+  .pill.hot { background: linear-gradient(120deg, #f043c6, #c04cf2 48%, #7c5cff); border-color: transparent; box-shadow: 0 10px 30px -8px rgba(240,67,198,.7); }
+  .shot { position: absolute; right: var(--sr); top: var(--st); width: var(--sw); border-radius: 22px; overflow: hidden; transform: perspective(1600px) rotateY(-16deg) rotateX(5deg) rotateZ(1deg); box-shadow: 0 40px 120px -20px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.12), 0 0 90px -10px rgba(240,67,198,.45); }
+  .shot img { display: block; width: 100%; }
+  .shot2 { position: absolute; right: var(--s2r); top: var(--s2t); width: var(--s2w); border-radius: 18px; overflow: hidden; transform: perspective(1600px) rotateY(-16deg) rotateX(5deg) rotateZ(1deg); box-shadow: 0 30px 90px -20px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.14); }
+  .shot2 img { display: block; width: 100%; }
+</style>
+</head>
+<body>
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
+  <div class="grid"></div>
+  <div class="shot"><img id="main" src="../screenshots/en/create.png" /></div>
+  <div class="shot2"><img id="second" src="../screenshots/en/queue.png" /></div>
+  <div class="left">
+    <div class="brand">
+      <svg width="var(--logo)" height="var(--logo)" id="logo" viewBox="0 0 64 64" fill="none">
+        <defs>
+          <linearGradient id="bg" x1="6" y1="4" x2="60" y2="62" gradientUnits="userSpaceOnUse"><stop stop-color="#FF5BD2"/><stop offset=".5" stop-color="#B24DF4"/><stop offset="1" stop-color="#5B5CFF"/></linearGradient>
+          <radialGradient id="hi" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(18 12) rotate(50) scale(40)"><stop stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#bg)"/><rect x="2" y="2" width="60" height="60" rx="18" fill="url(#hi)"/>
+        <g fill="#fff"><rect x="13" y="36" width="5.5" height="14" rx="2.75" opacity=".75"/><rect x="21.5" y="26" width="5.5" height="24" rx="2.75" opacity=".9"/><rect x="29.25" y="14" width="5.5" height="36" rx="2.75"/><rect x="37" y="26" width="5.5" height="24" rx="2.75" opacity=".9"/><rect x="45.5" y="36" width="5.5" height="14" rx="2.75" opacity=".75"/></g>
+        <rect x="19" y="38" width="26" height="4" rx="2" fill="#2a0f4a" opacity=".55"/>
+      </svg>
+      <h1>AceDeck</h1>
+    </div>
+    <div class="tag" id="tag">The desktop studio for <b>ACE-Step 1.5</b></div>
+    <div class="sub" id="sub">Local AI music generation on your own GPU — one‑click install, generation queue, batch songs, cover &amp; repaint, stability check and Claude&nbsp;MCP.</div>
+    <div class="pills" id="pills">
+      <span class="pill hot">Windows · NVIDIA CUDA</span><span class="pill">Queue &amp; batches</span><span class="pill">One‑click install</span><span class="pill">Claude MCP</span><span class="pill">EN / RU</span>
+    </div>
+  </div>
+<script>
+  // ?variant=banner (1600x640) | social (1280x640) ; ?lang=ru
+  const q = new URLSearchParams(location.search)
+  const social = location.hash.includes('social')
+  const ru = location.hash.includes('ru')
+  const v = social
+    ? { w: 1280, h: 640, pad: 70, lw: 600, title: '76px', tag: '30px', sub: '18px', pill: '14px', logo: 76, sr: '-330px', st: '110px', sw: '860px', s2r: '-60px', s2t: '330px', s2w: '470px' }
+    : { w: 1600, h: 640, pad: 90, lw: 680, title: '84px', tag: '34px', sub: '19px', pill: '15px', logo: 84, sr: '-170px', st: '80px', sw: '960px', s2r: '40px', s2t: '330px', s2w: '520px' }
+  const r = document.documentElement.style
+  for (const [k, val] of Object.entries(v)) r.setProperty('--' + k, typeof val === 'number' ? val + 'px' : val)
+  const logo = document.getElementById('logo'); logo.setAttribute('width', v.logo); logo.setAttribute('height', v.logo)
+  if (ru) {
+    document.getElementById('main').src = '../screenshots/ru/create.png'
+    document.getElementById('second').src = '../screenshots/ru/queue.png'
+    document.getElementById('tag').innerHTML = 'Десктоп‑студия для <b>ACE-Step 1.5</b>'
+    document.getElementById('sub').innerHTML = 'Локальная генерация музыки на вашей видеокарте — установка в один клик, очередь, пакетная генерация, каверы, проверка стабильности и Claude&nbsp;MCP.'
+    document.getElementById('pills').innerHTML = '<span class="pill hot">Windows · NVIDIA CUDA</span><span class="pill">Очередь и пакеты</span><span class="pill">Установка в 1 клик</span><span class="pill">Claude MCP</span><span class="pill">RU / EN</span>'
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{
+  "name": "ace-step-deck",
+  "productName": "AceDeck",
+  "version": "1.0.0",
+  "description": "AceDeck — desktop studio & control deck for ACE-Step 1.5 local AI music generation: one-click install, generation queue, batch songs, cover & repaint, engine control, stability test and Claude MCP.",
+  "author": {
+    "name": "DenisHumen",
+    "url": "https://github.com/DenisHumen"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/DenisHumen/ace-step-deck",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DenisHumen/ace-step-deck.git"
+  },
+  "keywords": [
+    "ace-step",
+    "ace-step-1.5",
+    "ai-music",
+    "music-generation",
+    "text-to-music",
+    "suno-alternative",
+    "electron",
+    "mcp",
+    "claude"
+  ],
+  "main": "out/main/index.cjs",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build:electron": "node scripts/build-electron.mjs",
+    "build:renderer": "vite build",
+    "build": "npm run typecheck && npm run build:renderer && npm run build:electron",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "icons": "node scripts/make-icons.mjs",
+    "start": "electron .",
+    "dist": "npm run build && electron-builder --win --x64 --publish never"
+  },
+  "build": {
+    "appId": "io.github.denishumen.acedeck",
+    "productName": "AceDeck",
+    "artifactName": "AceDeck-Setup-${version}.${ext}",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "out/mcp",
+        "to": "mcp"
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "AceDeck-Portable-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AceDeck",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    }
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/poppins": "^5.3.0",
+    "@modelcontextprotocol/sdk": "^1.30.1",
+    "@resvg/resvg-js": "^2.6.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "clsx": "^2.1.1",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
+    "lucide-react": "^1.48.0",
+    "motion": "^13.4.4",
+    "png-to-ico": "^3.0.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2",
+    "wavesurfer.js": "^8.0.1",
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "electron-winstaller@5.4.0": true
+  }
+}

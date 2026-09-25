@@ -1,0 +1,32 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Steps to reproduce, what you expected and what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: diag
+    attributes:
+      label: Stability check report
+      description: Open "Stability check", run a quick check and paste the copied report here.
+      render: markdown
+  - type: textarea
+    id: log
+    attributes:
+      label: Engine log (Engine → Live log → Copy)
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: AceDeck version
+      placeholder: "1.0.0"
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU / VRAM / driver
+      placeholder: "RTX 4070 12 GB, driver 576.xx"

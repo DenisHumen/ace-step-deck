@@ -1,0 +1,125 @@
+import { create } from 'zustand'
+import type {
+  DiagnosticsState,
+  EngineStatus,
+  GenerationParams,
+  InstallState,
+  LogLine,
+  ModelInfo,
+  PageId,
+  QueueState,
+  Settings,
+  SystemInfo,
+  Track,
+} from '@shared/types'
+import { api } from './api'
+
+export interface Toast {
+  id: number
+  kind: 'ok' | 'err' | 'info'
+  text: string
+}
+
+/** Prefill handed from Library/Queue to the Create page. */
+export interface CreatePrefill {
+  mode: 'simple' | 'custom' | 'cover' | 'repaint'
+  params: Partial<GenerationParams>
+  nonce: number
+}
+
+interface AppState {
+  page: PageId
+  settings: Settings | null
+  engine: EngineStatus | null
+  logs: LogLine[]
+  system: SystemInfo | null
+  queue: QueueState
+  tracks: Track[]
+  install: InstallState | null
+  diag: DiagnosticsState | null
+  models: ModelInfo[]
+  toasts: Toast[]
+  search: string
+  player: { trackId: string | null; playing: boolean; queueIds: string[] }
+  prefill: CreatePrefill | null
+  go: (p: PageId) => void
+  toast: (text: string, kind?: Toast['kind']) => void
+  play: (id: string, list?: string[]) => void
+  setPlaying: (b: boolean) => void
+  setSearch: (s: string) => void
+  setPrefill: (p: Omit<CreatePrefill, 'nonce'>) => void
+}
+
+let toastId = 0
+
+export const useApp = create<AppState>((set, get) => ({
+  page: 'create',
+  settings: null,
+  engine: null,
+  logs: [],
+  system: null,
+  queue: { jobs: [], paused: false, activeJobId: null, avgRunSeconds: null },
+  tracks: [],
+  install: null,
+  diag: null,
+  models: [],
+  toasts: [],
+  search: '',
+  player: { trackId: null, playing: false, queueIds: [] },
+  prefill: null,
+  go: (page) => set({ page }),
+  toast: (text, kind = 'info') => {
+    const id = ++toastId
+    set({ toasts: [...get().toasts, { id, kind, text }] })
+    setTimeout(() => set({ toasts: get().toasts.filter((t) => t.id !== id) }), kind === 'err' ? 6500 : 3500)
+  },
+  play: (id, list) => set({ player: { trackId: id, playing: true, queueIds: list ?? get().player.queueIds } }),
+  setPlaying: (playing) => set({ player: { ...get().player, playing } }),
+  setSearch: (search) => set({ search }),
+  setPrefill: (p) => set({ prefill: { ...p, nonce: Date.now() }, page: 'create' }),
+}))
+
+/** Initial fetch + live subscriptions to main-process events. */
+export async function bootstrap(): Promise<void> {
+  const [settings, engine, logs, queue, tracks, install, diag, models, system] = await Promise.all([
+    api.settings(),
+    api.engineStatus(),
+    api.engineLogs(),
+    api.queueState(),
+    api.library(),
+    api.installState(),
+    api.diagState(),
+    api.models(),
+    api.systemInfo(),
+  ])
+  useApp.setState({ settings, engine, logs: logs.slice(-1500), queue, tracks, install, diag, models, system })
+  if (!engine.installed && !install.running) useApp.setState({ page: 'setup' })
+
+  api.on('settings:update', (settings) => useApp.setState({ settings }))
+  api.on('engine:status', (engine) => useApp.setState({ engine }))
+  api.on('engine:log', (line) => {
+    const logs = useApp.getState().logs
+    const next = logs.length > 1500 ? logs.slice(-1200) : logs.slice()
+    next.push(line)
+    useApp.setState({ logs: next })
+  })
+  api.on('queue:update', (queue) => useApp.setState({ queue }))
+  api.on('library:update', (tracks) => useApp.setState({ tracks }))
+  api.on('install:update', (install) => useApp.setState({ install }))
+  api.on('diag:update', (diag) => useApp.setState({ diag }))
+  api.on('models:update', (models) => useApp.setState({ models }))
+  api.on('system:update', (system) => useApp.setState({ system }))
+  api.on('ui:navigate', (page) => useApp.setState({ page }))
+}
+
+/** Run an action and surface failures as a toast. */
+export async function attempt<T>(fn: () => Promise<T>, okText?: string): Promise<T | undefined> {
+  try {
+    const r = await fn()
+    if (okText) useApp.getState().toast(okText, 'ok')
+    return r
+  } catch (e: any) {
+    useApp.getState().toast(e?.message ?? String(e), 'err')
+    return undefined
+  }
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="6" y1="4" x2="60" y2="62" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF5BD2"/>
+      <stop offset="0.5" stop-color="#B24DF4"/>
+      <stop offset="1" stop-color="#5B5CFF"/>
+    </linearGradient>
+    <radialGradient id="hi" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(18 12) rotate(50) scale(40)">
+      <stop stop-color="#fff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#hi)"/>
+  <g fill="#fff">
+    <rect x="13" y="36" width="5.5" height="14" rx="2.75" opacity="0.75"/>
+    <rect x="21.5" y="26" width="5.5" height="24" rx="2.75" opacity="0.9"/>
+    <rect x="29.25" y="14" width="5.5" height="36" rx="2.75"/>
+    <rect x="37" y="26" width="5.5" height="24" rx="2.75" opacity="0.9"/>
+    <rect x="45.5" y="36" width="5.5" height="14" rx="2.75" opacity="0.75"/>
+  </g>
+  <rect x="19" y="38" width="26" height="4" rx="2" fill="#2a0f4a" opacity="0.55"/>
+</svg>
