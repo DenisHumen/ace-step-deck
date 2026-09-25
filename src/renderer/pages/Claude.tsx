@@ -5,16 +5,16 @@ import { api, type McpConfig } from '../lib/api'
 import { useT } from '../i18n'
 import { Badge, Button, Card, CardTitle, CopyButton, PageHeader, StatusDot, Toggle } from '../components/ui'
 
-const TOOLS = [
-  ['acedeck_status', 'Engine, GPU, queue & library summary'],
-  ['engine_control', 'Start / stop / restart ACE-Step'],
-  ['generate_music', 'Text-to-music: description or caption + lyrics, N songs'],
-  ['transform_audio', 'Cover / remix or repaint an existing file'],
-  ['draft_song', 'LM writes caption, lyrics, BPM & key'],
-  ['list_queue · get_job · job_control · queue_control', 'Queue management'],
-  ['list_tracks', 'Browse generated songs with file paths'],
-  ['run_diagnostics', 'Quick check or full stress test'],
-  ['engine_logs', 'Tail of the engine log'],
+const TOOLS: [string, string][] = [
+  ['acedeck_status', 'claude.tool.status'],
+  ['engine_control', 'claude.tool.engine'],
+  ['generate_music', 'claude.tool.generate'],
+  ['transform_audio', 'claude.tool.transform'],
+  ['draft_song', 'claude.tool.draft'],
+  ['list_queue · get_job · job_control · queue_control', 'claude.tool.queue'],
+  ['list_tracks', 'claude.tool.tracks'],
+  ['run_diagnostics', 'claude.tool.diag'],
+  ['engine_logs', 'claude.tool.logs'],
 ]
 
 export function ClaudePage() {
@@ -89,7 +89,7 @@ export function ClaudePage() {
               {TOOLS.map(([name, desc]) => (
                 <div key={name} className="flex gap-3 border-b border-white/[0.05] pb-2 last:border-0">
                   <code className="shrink-0 font-mono text-[12px] text-orchid">{name}</code>
-                  <span className="text-[12.5px] text-muted">{desc}</span>
+                  <span className="text-[12.5px] text-muted">{t(desc)}</span>
                 </div>
               ))}
             </div>
