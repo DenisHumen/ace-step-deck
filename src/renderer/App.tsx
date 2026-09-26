@@ -1,6 +1,7 @@
 import { clsx } from 'clsx'
 import { AnimatePresence, motion } from 'motion/react'
 import {
+  ArrowUpCircle,
   Activity,
   Bot,
   Boxes,
@@ -107,8 +108,34 @@ function Sidebar() {
           </div>
         ))}
       </nav>
+      <UpdatePill />
       <EngineCard />
     </aside>
+  )
+}
+
+/** Shows up in the sidebar when a new AceDeck release is available, downloading or ready to install. */
+function UpdatePill() {
+  const t = useT()
+  const u = useApp((s) => s.update)
+  const go = useApp((s) => s.go)
+  if (!u || (u.state !== 'available' && u.state !== 'downloading' && u.state !== 'ready')) return null
+  const label =
+    u.state === 'available'
+      ? t('update.sidebar.available', { v: u.latest ?? '' })
+      : u.state === 'downloading'
+        ? t('update.sidebar.downloading', { p: Math.round(u.percent * 100) })
+        : t('update.sidebar.ready', { v: u.latest ?? '' })
+  return (
+    <button
+      onClick={() => go('settings')}
+      className="no-drag mb-3 flex w-full items-center gap-2.5 rounded-2xl border border-magenta/30 bg-magenta/10 px-3 py-2.5 text-left text-[12.5px] font-medium text-fg transition-colors hover:bg-magenta/15"
+    >
+      <span className="flex size-6 items-center justify-center rounded-full brand-gradient text-white">
+        <ArrowUpCircle className="size-3.5" />
+      </span>
+      <span className="truncate">{label}</span>
+    </button>
   )
 }
 

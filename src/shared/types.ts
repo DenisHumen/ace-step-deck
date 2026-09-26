@@ -263,6 +263,24 @@ export interface Settings {
   controlApiPort: number
   notifyOnFinish: boolean
   onboarded: boolean
+  autoCheckUpdates: boolean
+  /** The first-run desktop shortcut was created (or already existed) — never recreate it behind the user's back. */
+  desktopShortcutDone: boolean
+}
+
+export interface UpdateStatus {
+  state: 'idle' | 'checking' | 'none' | 'available' | 'downloading' | 'ready' | 'error'
+  /** installer = electron-updater (Setup build); portable = downloads the new portable exe; manual = dev build, opens the release page. */
+  mode: 'installer' | 'portable' | 'manual'
+  current: string
+  latest: string | null
+  notes: string | null
+  releaseUrl: string
+  percent: number
+  bytesPerSecond: number
+  total: number
+  error: string | null
+  checkedAt: number | null
 }
 
 export interface AppInfo {
@@ -283,6 +301,8 @@ export interface SampleResult {
   time_signature?: string
   duration?: number | null
   vocal_language?: string
+  /** Set by AceDeck's composer when the description asks for (or implies) an instrumental. */
+  instrumental?: boolean
 }
 
 export type PageId = 'create' | 'queue' | 'library' | 'engine' | 'diagnostics' | 'models' | 'setup' | 'settings' | 'claude'
@@ -298,4 +318,5 @@ export interface EventMap {
   'settings:update': Settings
   'system:update': SystemInfo
   'ui:navigate': PageId
+  'update:status': UpdateStatus
 }

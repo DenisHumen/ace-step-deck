@@ -14,6 +14,8 @@ import { detectInstalls, inspectInstall, isAceStepDir } from './install-detect'
 import { mcpConfig, installIntoClaudeDesktop, mcpServerPath } from './claude'
 import { controlFile, startControlServer, stopControlServer } from './control-server'
 import { run } from './util'
+import { composeFromDescription } from './compose'
+import { checkForUpdates, createDesktopShortcut, downloadUpdate, installUpdate, openReleasePage, updateStatus } from './updater'
 
 const win = () => BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null
 
@@ -54,6 +56,14 @@ const handlers: Record<string, (...args: any[]) => unknown> = {
   },
   'app.openPath': (p: string) => (existsSync(p) ? shell.openPath(p) : ''),
   'app.mcpConfig': () => mcpConfig(),
+  'app.createShortcut': () => createDesktopShortcut(),
+
+  // updates
+  'update.status': () => updateStatus(),
+  'update.check': () => checkForUpdates(),
+  'update.download': () => downloadUpdate(),
+  'update.install': () => installUpdate(),
+  'update.openPage': () => openReleasePage(),
   'app.installClaudeDesktop': () => installIntoClaudeDesktop(),
 
   // settings
@@ -139,7 +149,7 @@ const handlers: Record<string, (...args: any[]) => unknown> = {
   'diag.cancel': () => diagnostics.cancel(),
 
   // AI helpers (need a running engine)
-  'ai.createSample': (query: string, instrumental: boolean, lang: string) => engine.api.createSample(query, instrumental, lang),
+  'ai.createSample': (query: string, instrumental: boolean, lang: string) => composeFromDescription(query, instrumental, lang),
   'ai.formatInput': (caption: string, lyrics: string, meta: Record<string, unknown>) => engine.api.formatInput(caption, lyrics, meta),
   'ai.randomSample': (type: 'simple_mode' | 'custom_mode') => engine.api.randomSample(type),
 

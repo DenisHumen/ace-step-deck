@@ -216,10 +216,11 @@ export function Segmented<T extends string>({ value, onChange, options, classNam
   )
 }
 
-export function Chip({ children, active, onClick, className }: { children: ReactNode; active?: boolean; onClick?: () => void; className?: string }) {
+export function Chip({ children, active, onClick, className, title }: { children: ReactNode; active?: boolean; onClick?: () => void; className?: string; title?: string }) {
   return (
     <button
       type="button"
+      title={title}
       onClick={onClick}
       className={clsx(
         'no-drag inline-flex h-8 items-center gap-1.5 rounded-full border px-3.5 text-[12.5px] transition-all',

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.2 — 2026-09-26
+
+- **Simple mode keeps your genre.** ACE-Step's DiT only understands English captions and its LM retold long Russian descriptions as lo-fi hip-hop / pop with rap. AceDeck now:
+  - translates genres, instruments, moods, vocals and tempo from the description into a short English caption (≈250 Russian music terms, Latin names kept verbatim) and shows it live under the prompt (*Engine hears*);
+  - never lets the LM rewrite the caption before rendering (`use_cot_caption` is off by default, saved forms are migrated);
+  - renders with **Exact style** (new toggle, on by default): the music model follows the caption and the LM only writes lyrics — LM *thinking* was the main source of style drift in A/B tests (3/3 on-genre without it vs. 1–2/3 with it);
+  - takes the tempo from the words (“медленный” → 70 BPM, explicit “84 bpm”), and makes instrumental-only genres (ambient, dark jazz, film score…) instrumental unless you mention vocals;
+  - applies the same to *Write with AI*, Russian captions in Custom mode, the automation API and the MCP tools.
+- **Updates inside the app.** Settings → *Updates* checks GitHub Releases (automatically on start and every 6 h), shows release notes, downloads with progress and restarts into the new version; a badge appears in the sidebar. The installer build uses electron-updater (silent per-user install, differential download); the portable build downloads the new portable `.exe` next to itself, relaunches it and moves the old one to the Recycle Bin.
+- **Desktop shortcut.** The installer always (re)creates the desktop icon, the portable build creates one on first run, and Settings has a *Create desktop shortcut* button.
+- Releases now ship `latest.yml` and the `.blockmap` the updater needs.
+
 ## 1.0.1 — 2026-09-26
 
 Fixes found by a new end-to-end test suite (`tests/e2e.mjs`) run against the real engine.

@@ -51,7 +51,9 @@ const customForm = {
 
 const SHOTS = {
   async create(lang) {
-    await js(`localStorage.setItem('acedeck.create.v1', JSON.stringify({ ...JSON.parse(localStorage.getItem('acedeck.create.v1') || '{}'), mode: 'simple', simple: '', count: 1, batch: 1 })); 1`)
+    // The Russian shot shows the "Engine hears" translation preview.
+    const simple = lang === 'ru' ? 'Мрачный нуар-джаз для ночного города: приглушённая труба, контрабас, щётки по малому барабану, дымный бар, медленно' : ''
+    await js(`(() => { const f = JSON.parse(localStorage.getItem('acedeck.create.v1') || '{}'); Object.assign(f, { v: 2, mode: 'simple', simple: ${JSON.stringify(simple)}, strict: true, count: 1, batch: 1 }); f.p = Object.assign(f.p || {}, { instrumental: false, vocal_language: 'unknown', audio_duration: null }); localStorage.setItem('acedeck.create.v1', JSON.stringify(f)); return 1 })()`)
     await nav('library')
     await nav('create')
     await shot(lang, 'create')

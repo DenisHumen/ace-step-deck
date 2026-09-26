@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { jobTitle, mergeClaudeDesktopConfig, normalizeSample, slugify, smoothProgress } from '../src/shared/logic'
+import { compareVersions, jobTitle, mergeClaudeDesktopConfig, normalizeSample, slugify, smoothProgress } from '../src/shared/logic'
 import { stageKey } from '../src/renderer/lib/stage'
 import { en } from '../src/renderer/i18n/en'
 import { ru } from '../src/renderer/i18n/ru'
@@ -106,5 +106,15 @@ describe('mergeClaudeDesktopConfig', () => {
   it('refuses to overwrite invalid JSON', () => {
     expect(() => mergeClaudeDesktopConfig('{ broken', entry)).toThrow(/not valid JSON/)
     expect(() => mergeClaudeDesktopConfig('[1,2]', entry)).toThrow(/JSON object/)
+  })
+})
+
+describe('compareVersions', () => {
+  it('orders dotted versions numerically', () => {
+    expect(compareVersions('1.0.10', '1.0.9')).toBe(1)
+    expect(compareVersions('v1.0.2', '1.0.2')).toBe(0)
+    expect(compareVersions('1.0.2', '1.1.0')).toBe(-1)
+    expect(compareVersions('1.0.2-beta.1', '1.0.2')).toBe(-1)
+    expect(compareVersions('2.0', '1.9.9')).toBe(1)
   })
 })

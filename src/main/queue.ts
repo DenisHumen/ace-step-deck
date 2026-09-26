@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import type { GenerationParams, Job, JobSpec, QueueState, Track } from '@shared/types'
 import { DEFAULT_PARAMS } from '@shared/constants'
 import { jobTitle, slugify, smoothProgress } from '@shared/logic'
+import { extractStyle, styleCaption } from '@shared/style'
+import { composeFromDescription } from './compose'
 import { engine } from './engine'
 import { library } from './library'
 import { numericOrNull, probeDuration } from './media'
@@ -28,6 +30,14 @@ export function buildRequest(p: Partial<GenerationParams>, songs: number, runInd
   if (!merged.audio_duration || merged.audio_duration <= 0) delete merged.audio_duration
   if (!merged.bpm) delete merged.bpm
   if (merged.instrumental && !merged.lyrics?.trim()) merged.lyrics = '[Instrumental]'
+  // The DiT only understands English captions: a Russian caption is sent as the English style tags it contains.
+  if (!merged.sample_mode && merged.prompt?.trim()) {
+    const hints = extractStyle(merged.prompt)
+    if (hints.needsTranslation) {
+      merged.prompt = styleCaption(merged.prompt, hints) || merged.prompt
+      if (!merged.bpm && hints.bpm) merged.bpm = hints.bpm
+    }
+  }
   if (merged.sample_query?.trim()) merged.sample_mode = true
   if (!merged.src_audio_path) delete merged.src_audio_path
   if (!merged.reference_audio_path) delete merged.reference_audio_path
@@ -378,18 +388,23 @@ class QueueManager {
     }, 1000)
     try {
       const lang = body.vocal_language && body.vocal_language !== 'unknown' ? body.vocal_language : 'unknown'
-      const s = await engine.api.createSample(body.sample_query!.trim(), !!body.instrumental, lang)
+      const s = await composeFromDescription(body.sample_query!, !!body.instrumental, lang)
       const out: Partial<GenerationParams> = {
         ...body,
         sample_mode: false,
         sample_query: '',
-        prompt: s.caption || body.sample_query!,
-        lyrics: body.instrumental ? '[Instrumental]' : s.lyrics || '',
+        prompt: s.caption,
+        lyrics: s.lyrics || '',
+        instrumental: s.instrumental,
         bpm: body.bpm ?? s.bpm ?? undefined,
         key_scale: body.key_scale || s.key_scale || '',
         time_signature: body.time_signature || s.time_signature || '',
         audio_duration: body.audio_duration ?? s.duration ?? undefined,
-        vocal_language: lang !== 'unknown' ? lang : s.vocal_language || 'unknown',
+        vocal_language: s.vocal_language || 'unknown',
+        // The caption above already is the user's style; don't let the LM retell it before the DiT.
+        use_cot_caption: false,
+        // LM "thinking" (audio-code planning) drifts away from niche genres; Simple mode follows the text unless asked otherwise.
+        thinking: job.spec.params.thinking ?? false,
       }
       if (!out.bpm) delete out.bpm
       if (!out.audio_duration) delete out.audio_duration

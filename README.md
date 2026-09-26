@@ -33,7 +33,7 @@ ACE-Step 1.5 is one of the best open music generation models — a local, free a
 
 | | |
 |---|---|
-| 🎹 **Full ACE-Step 1.5 studio** | Simple mode (describe the song, the LM writes caption + lyrics), Custom mode (style tags + lyrics with `[Verse]`/`[Chorus]` helpers), **Cover / remix**, **Repaint** a section, **Stems** (extract / add / complete tracks). Every engine parameter is exposed: duration, BPM, key, time signature, vocal language, DiT & LM model, thinking, steps, guidance, seed, sampler, shift, ADG, CFG interval, LM temperature/CFG/top-k/top-p, negative prompt, output format (MP3/FLAC/WAV/Opus/AAC). |
+| 🎹 **Full ACE-Step 1.5 studio** | Simple mode (describe the song in any language — AceDeck turns it into the English style caption ACE-Step understands, shows what the engine will hear and keeps your genre with *Exact style*; the LM writes the lyrics), Custom mode (style tags + lyrics with `[Verse]`/`[Chorus]` helpers), **Cover / remix**, **Repaint** a section, **Stems** (extract / add / complete tracks). Every engine parameter is exposed: duration, BPM, key, time signature, vocal language, DiT & LM model, thinking, steps, guidance, seed, sampler, shift, ADG, CFG interval, LM temperature/CFG/top-k/top-p, negative prompt, output format (MP3/FLAC/WAV/Opus/AAC). |
 | ✍️ **AI helpers** | *Write with AI* turns an idea into caption, lyrics, tempo and key; *Enhance* polishes your lyrics; *Surprise me* fills in a random example. |
 | 📋 **Generation queue** | Queue any number of jobs, set **how many songs** each job should produce and how many are rendered per pass. Reorder, cancel, retry (resumes where it stopped), duplicate, pause. The queue survives restarts and parks itself if the engine goes down. |
 | 📈 **Live progress** | Progress ring with real engine stages (*composing → planning melody → rendering → decoding*), per-pass progress bar, ETA and the engine's live log line. |
@@ -44,6 +44,7 @@ ACE-Step 1.5 is one of the best open music generation models — a local, free a
 | 🧠 **Model manager** | Download extra DiT models (SFT, Base, XL 4B, turbo variants) and LM planners (0.6B / 4B) with progress, pick the defaults. |
 | 🤖 **Claude MCP** | 12 MCP tools so Claude Desktop / Claude Code can generate songs, manage the queue, run diagnostics and control the engine. One click adds AceDeck to Claude Desktop. |
 | 🔌 **Automation API** | Token-protected local HTTP API (`127.0.0.1`) + `scripts/ctl.mjs` for your own scripts. |
+| 🔄 **Updates in the app** | AceDeck checks GitHub Releases on start, shows what's new and installs the new version in one click (Settings → Updates) — the portable build updates itself too. The installer puts an AceDeck icon on the desktop. |
 | 🌍 **English & Русский** | Full UI localization with proper plural forms; follows the system language. |
 
 ## 📸 Screenshots
@@ -77,6 +78,7 @@ ACE-Step 1.5 is one of the best open music generation models — a local, free a
 2. Run it. Windows SmartScreen may warn because the build is not code-signed → *More info* → *Run anyway*.
 3. On first launch AceDeck looks for an existing ACE-Step 1.5 checkout. If none is found, open **Install**, pick a folder and press **Install ACE-Step** — it downloads ~3 GB of Python packages and ~10 GB of models (≈ 5–15 min depending on your connection).
 4. Press **Start** in the sidebar, go to **Create**, describe a song and hit **Create**. Songs land in `Music\AceDeck`.
+5. New versions arrive inside the app: a badge appears in the sidebar and **Settings → Updates** downloads and installs them (1.0.0/1.0.1 have no updater — install 1.0.2 once by hand).
 
 > Already have ACE-Step 1.5? AceDeck auto-detects common locations (e.g. `%USERPROFILE%\ACE-Step-1.5`) or you can point it to any folder in **Install → Use an existing installation**.
 
@@ -210,6 +212,10 @@ ACE-Step enables CPU offload below 16 GB and many 16 GB cards report 15.9 GB. Se
 ACE-Step's own sample mode overwrites duration/BPM/key with the LM's choice. AceDeck composes first (<code>/v1/create_sample</code>) and then renders with your settings, so the duration you pick is respected.
 </details>
 
+<details><summary><b>Simple mode gives a different genre than I described</b></summary>
+ACE-Step's music model understands English captions, and its language model tends to retell long non-English descriptions as generic pop/hip-hop. Since 1.0.2 AceDeck translates genres, instruments, mood and tempo from your description into a short English caption (see <i>Engine hears</i> under the prompt), stops the LM from rewriting it, and with <b>Exact style</b> on (default) the music model follows that caption directly. Name the genre and the main instruments; very niche sub-genres are still limited by what the model knows. Turn <i>Exact style</i> off to let the LM plan the arrangement (richer structure, looser style).
+</details>
+
 <details><summary><b>Hugging Face is blocked in my country</b></summary>
 The ACE-Step downloader automatically falls back to ModelScope.
 </details>
@@ -226,7 +232,8 @@ Use “Add or remove programs”. The ACE-Step folder (with ~17 GB of Python pac
 
 - [ ] macOS (Apple Silicon / MLX) and Linux builds
 - [ ] LoRA training UI
-- [ ] Code signing & auto-update
+- [x] In-app updates
+- [ ] Code signing
 - [ ] Playlists, tags and export to DAW stems
 - [ ] Multi-GPU / multi-slot model switching
 

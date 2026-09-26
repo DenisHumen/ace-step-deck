@@ -12,6 +12,8 @@ import { listModels, downloadModel } from './models'
 import { getSettings } from './settings'
 import { gpuInfo } from './system'
 import { emit, uid, writeJson } from './util'
+import { composeFromDescription } from './compose'
+import { checkForUpdates, downloadUpdate, installUpdate, updateStatus } from './updater'
 
 export const controlFile = () => join(app.getPath('userData'), 'control.json')
 let server: http.Server | null = null
@@ -93,9 +95,17 @@ route('POST', '/models/:name/download', ({ params }) => {
   return { started: true }
 })
 
+route('GET', '/update', () => updateStatus())
+route('POST', '/update/check', () => checkForUpdates())
+route('POST', '/update/download', () => downloadUpdate())
+route('POST', '/update/install', async () => {
+  await installUpdate()
+  return { restarting: true }
+})
+
 route('POST', '/ai/sample', async ({ body }) => {
   if (!engine.ready) throw new Error('Engine is not running')
-  return engine.api.createSample(String(body?.query ?? ''), !!body?.instrumental, String(body?.language ?? 'unknown'))
+  return composeFromDescription(String(body?.query ?? ''), !!body?.instrumental, String(body?.language ?? 'unknown'))
 })
 
 // Automation helpers for tests and README screenshots (dev builds / ACEDECK_AUTOMATION=1 only).

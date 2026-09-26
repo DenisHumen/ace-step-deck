@@ -11,8 +11,10 @@ import type {
   Settings,
   SystemInfo,
   Track,
+  UpdateStatus,
 } from '@shared/types'
 import { api } from './api'
+import { translate } from '../i18n'
 
 export interface Toast {
   id: number
@@ -38,6 +40,7 @@ interface AppState {
   install: InstallState | null
   diag: DiagnosticsState | null
   models: ModelInfo[]
+  update: UpdateStatus | null
   toasts: Toast[]
   search: string
   player: { trackId: string | null; playing: boolean; queueIds: string[] }
@@ -63,6 +66,7 @@ export const useApp = create<AppState>((set, get) => ({
   install: null,
   diag: null,
   models: [],
+  update: null,
   toasts: [],
   search: '',
   player: { trackId: null, playing: false, queueIds: [] },
@@ -81,7 +85,7 @@ export const useApp = create<AppState>((set, get) => ({
 
 /** Initial fetch + live subscriptions to main-process events. */
 export async function bootstrap(): Promise<void> {
-  const [settings, engine, logs, queue, tracks, install, diag, models, system] = await Promise.all([
+  const [settings, engine, logs, queue, tracks, install, diag, models, system, update] = await Promise.all([
     api.settings(),
     api.engineStatus(),
     api.engineLogs(),
@@ -91,8 +95,9 @@ export async function bootstrap(): Promise<void> {
     api.diagState(),
     api.models(),
     api.systemInfo(),
+    api.updateStatus(),
   ])
-  useApp.setState({ settings, engine, logs: logs.slice(-1500), queue, tracks, install, diag, models, system })
+  useApp.setState({ settings, engine, logs: logs.slice(-1500), queue, tracks, install, diag, models, system, update })
   if (!engine.installed && !install.running) useApp.setState({ page: 'setup' })
 
   api.on('settings:update', (settings) => useApp.setState({ settings }))
@@ -110,6 +115,13 @@ export async function bootstrap(): Promise<void> {
   api.on('models:update', (models) => useApp.setState({ models }))
   api.on('system:update', (system) => useApp.setState({ system }))
   api.on('ui:navigate', (page) => useApp.setState({ page }))
+  api.on('update:status', (update) => {
+    const prev = useApp.getState().update
+    useApp.setState({ update })
+    if (update.state === 'available' && (prev?.state !== 'available' || prev.latest !== update.latest)) {
+      useApp.getState().toast(translate(useApp.getState().settings?.language ?? 'en', 'update.toast', { v: update.latest ?? '' }), 'info')
+    }
+  })
 }
 
 /** Run an action and surface failures as a toast. */

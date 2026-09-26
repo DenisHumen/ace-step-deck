@@ -49,6 +49,8 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'outputDir' | 'language'> = {
   controlApiPort: 47815,
   notifyOnFinish: true,
   onboarded: false,
+  autoCheckUpdates: true,
+  desktopShortcutDone: false,
 }
 
 export const DEFAULT_PARAMS: GenerationParams = {
@@ -86,7 +88,7 @@ export const DEFAULT_PARAMS: GenerationParams = {
   lm_top_p: 0.9,
   lm_repetition_penalty: 1.0,
   lm_negative_prompt: 'NO USER INPUT',
-  use_cot_caption: true,
+  use_cot_caption: false,
   use_cot_language: true,
   constrained_decoding: true,
 }

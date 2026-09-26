@@ -17,9 +17,12 @@ import {
   Wand2,
   Wand,
   Disc3,
+  Ear,
+  Target,
 } from 'lucide-react'
 import type { GenerationParams, TaskType } from '@shared/types'
 import { DEFAULT_PARAMS, KEYS, LYRIC_TAGS, STYLE_PRESETS, TRACK_CLASSES, VOCAL_LANGUAGES } from '@shared/constants'
+import { extractStyle, styleCaption } from '@shared/style'
 import { useApp, attempt } from '../lib/store'
 import { api, fileUrl } from '../lib/api'
 import { useT } from '../i18n'
@@ -33,6 +36,9 @@ type StemTask = 'extract' | 'lego' | 'complete'
 
 interface Form {
   mode: Mode
+  v: number
+  /** Simple mode: the DiT follows the description (no LM audio-code planning). */
+  strict: boolean
   simple: string
   p: GenerationParams
   count: number
@@ -43,12 +49,18 @@ interface Form {
 }
 
 const STORE_KEY = 'acedeck.create.v1'
+/** Bumped when a default changes in a way saved forms must pick up (v2: the LM no longer rewrites captions). */
+const FORM_VERSION = 2
 
 function loadForm(): Form {
-  const base: Form = { mode: 'simple', simple: '', p: { ...DEFAULT_PARAMS }, count: 1, batch: 1, stemTask: 'extract', stemTrack: 'vocals', stemClasses: ['drums', 'bass'] }
+  const base: Form = { v: FORM_VERSION, mode: 'simple', simple: '', strict: true, p: { ...DEFAULT_PARAMS }, count: 1, batch: 1, stemTask: 'extract', stemTrack: 'vocals', stemClasses: ['drums', 'bass'] }
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null')
-    if (saved) return { ...base, ...saved, p: { ...DEFAULT_PARAMS, ...saved.p } }
+    if (saved) {
+      const p = { ...DEFAULT_PARAMS, ...saved.p }
+      if ((saved.v ?? 1) < 2) p.use_cot_caption = false
+      return { ...base, ...saved, v: FORM_VERSION, p }
+    }
   } catch {
     /* ignore */
   }
@@ -103,7 +115,7 @@ export function CreatePage() {
         time_signature: s.time_signature || x.p.time_signature,
         audio_duration: s.duration ?? x.p.audio_duration,
         vocal_language: s.vocal_language || x.p.vocal_language,
-        instrumental: x.p.instrumental,
+        instrumental: s.instrumental ?? x.p.instrumental,
       },
     }))
   }
@@ -126,7 +138,7 @@ export function CreatePage() {
     switch (f.mode) {
       case 'simple':
         if (!f.simple.trim()) return t('create.needCaption')
-        return { ...common, task_type: 'text2music', sample_mode: true, sample_query: f.simple.trim(), prompt: '', lyrics: '', thinking: true }
+        return { ...common, task_type: 'text2music', sample_mode: true, sample_query: f.simple.trim(), prompt: '', lyrics: '', thinking: !f.strict }
       case 'custom':
         if (!p.prompt.trim() && !p.lyrics.trim()) return t('create.needCaption')
         return { ...common, task_type: 'text2music', sample_mode: false, sample_query: '' }
@@ -204,6 +216,9 @@ export function CreatePage() {
                 />
               </>
             )}
+            {(f.mode === 'simple' || f.mode === 'custom') && (
+              <StylePreview text={f.mode === 'simple' ? f.simple : p.prompt} simple={f.mode === 'simple'} instrumental={p.instrumental} />
+            )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Chip active={showStyles} onClick={() => setShowStyles(!showStyles)}>
                 <Palette className="size-3.5" /> {t('create.styles')}
@@ -213,6 +228,14 @@ export function CreatePage() {
                   <Music className="size-3.5" /> {t('create.instrumental')}
                   <span className={clsx('ml-1 inline-block h-3.5 w-6 rounded-full p-[2px] transition-colors', p.instrumental ? 'bg-magenta' : 'bg-white/15')}>
                     <span className={clsx('block size-2.5 rounded-full bg-white transition-transform', p.instrumental && 'translate-x-2.5')} />
+                  </span>
+                </Chip>
+              )}
+              {f.mode === 'simple' && (
+                <Chip active={f.strict} onClick={() => set({ strict: !f.strict })} title={t('create.strict.hint')}>
+                  <Target className="size-3.5" /> {t('create.strict')}
+                  <span className={clsx('ml-1 inline-block h-3.5 w-6 rounded-full p-[2px] transition-colors', f.strict ? 'bg-magenta' : 'bg-white/15')}>
+                    <span className={clsx('block size-2.5 rounded-full bg-white transition-transform', f.strict && 'translate-x-2.5')} />
                   </span>
                 </Chip>
               )}
@@ -661,6 +684,40 @@ function RecentCreations() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Shows what ACE-Step will actually hear for a (Russian) description: English style tags, tempo, vocals. */
+function StylePreview({ text, simple, instrumental }: { text: string; simple: boolean; instrumental: boolean }) {
+  const t = useT()
+  const h = useMemo(() => extractStyle(text), [text])
+  if (!text.trim()) return null
+  const autoInst = simple && !instrumental && h.instrumental === true
+  if (!h.needsTranslation && !autoInst && !(simple && h.bpm)) return null
+  const caption = h.needsTranslation ? styleCaption(text, h) : ''
+  // Only what actually makes it into the (shortened) English caption.
+  const tags = h.tags.filter((tag) => caption.toLowerCase().includes(tag.replace(/ tempo$/, '').toLowerCase()))
+  return (
+    <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-white/[0.06] pt-2.5 text-[12px]" title={caption ? `${t('create.hears.hint')}
+
+${caption}` : t('create.hears.hint')}>
+      <span className="mr-1 inline-flex items-center gap-1 font-medium text-muted">
+        <Ear className="size-3.5" /> {t('create.hears')}
+      </span>
+      {h.needsTranslation && !tags.length && <span className="text-amber">{t('create.hears.none')}</span>}
+      {tags.map((tag) => (
+        <span key={tag} className="rounded-full bg-orchid/15 px-2 py-0.5 text-fg/90">
+          {tag}
+        </span>
+      ))}
+      {simple && h.bpm && <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-muted">{h.bpm} BPM</span>}
+      {simple && (
+        <span className={clsx('rounded-full px-2 py-0.5', instrumental || h.instrumental === true ? 'bg-magenta/15 text-fg/90' : 'bg-white/[0.06] text-muted')}>
+          {instrumental || h.instrumental === true ? t('create.hears.instrumental') : t('create.hears.vocals')}
+        </span>
+      )}
+      {autoInst && <span className="w-full pt-0.5 text-[11.5px] text-dim">{t('create.hears.autoInst')}</span>}
     </div>
   )
 }

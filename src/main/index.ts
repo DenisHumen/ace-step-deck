@@ -13,6 +13,7 @@ import { emit, on, writeJson } from './util'
 import { defaultInstallPath } from './installer'
 import { detectInstalls } from './install-detect'
 import { updateSettings } from './settings'
+import { startUpdater } from './updater'
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL
 
@@ -130,6 +131,7 @@ if (!app.requestSingleInstanceLock()) {
     createWindow()
     await engine.refreshInstall()
     await startControlServer()
+    startUpdater()
 
     // Resume the queue only on the transition into "ready" (not on every status tick).
     let lastState = engine.status.state

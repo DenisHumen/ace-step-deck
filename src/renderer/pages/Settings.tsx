@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Cpu, ExternalLink, FolderOpen, Globe2, Info, Settings2 } from 'lucide-react'
+import { Cpu, Download, ExternalLink, FolderOpen, Globe2, Info, MonitorDown, RefreshCw, RotateCcw, Settings2 } from 'lucide-react'
 import type { AppInfo, Settings } from '@shared/types'
 import { PROJECT_URL } from '@shared/constants'
 import { useApp, attempt } from '../lib/store'
 import { api } from '../lib/api'
 import { useT } from '../i18n'
-import { Button, Card, CardTitle, Field, PageHeader, Select, Toggle } from '../components/ui'
+import { Button, Card, CardTitle, Field, PageHeader, ProgressBar, Select, Toggle } from '../components/ui'
+import { fmtBytes, fmtDate } from '../lib/format'
 import { Logo } from '../components/Logo'
 
 export function SettingsPage() {
@@ -60,6 +61,7 @@ export function SettingsPage() {
           </Card>
         </div>
         <div className="space-y-5">
+          <UpdatesCard packaged={!!info?.isPackaged} />
           <Card>
             <CardTitle icon={<Cpu className="size-4" />}>{t('settings.engine')}</CardTitle>
             <div className="space-y-4">
@@ -125,5 +127,106 @@ export function SettingsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+function UpdatesCard({ packaged }: { packaged: boolean }) {
+  const t = useT()
+  const u = useApp((x) => x.update)
+  const s = useApp((x) => x.settings)
+  const busy = useApp((x) => x.queue.jobs.some((j) => j.status === 'running'))
+  const [acting, setActing] = useState(false)
+  if (!u || !s) return null
+  const lang = s.language
+  const run = async (fn: () => Promise<unknown>) => {
+    setActing(true)
+    await attempt(fn)
+    setActing(false)
+  }
+
+  const headline =
+    u.state === 'checking'
+      ? t('update.checking')
+      : u.state === 'none'
+        ? t('update.none')
+        : u.state === 'available'
+          ? t('update.available', { v: u.latest ?? '' })
+          : u.state === 'downloading'
+            ? t('update.downloading')
+            : u.state === 'ready'
+              ? t('update.ready', { v: u.latest ?? '' })
+              : u.state === 'error'
+                ? t('update.error')
+                : t('update.idle')
+
+  let action: React.ReactNode
+  if (u.state === 'available') {
+    action =
+      u.mode === 'manual' ? (
+        <Button size="sm" variant="soft" icon={<ExternalLink className="size-3.5" />} onClick={() => api.updateOpenPage()}>
+          {t('update.openPage')}
+        </Button>
+      ) : (
+        <Button size="sm" variant="primary" icon={<Download className="size-3.5" />} loading={acting} onClick={() => run(() => api.updateDownload())}>
+          {t('update.download')}
+        </Button>
+      )
+  } else if (u.state === 'ready') {
+    action = (
+      <Button size="sm" variant="primary" icon={<RotateCcw className="size-3.5" />} loading={acting} onClick={() => run(() => api.updateInstall())}>
+        {t('update.install')}
+      </Button>
+    )
+  } else if (u.state !== 'downloading') {
+    action = (
+      <Button size="sm" variant="soft" icon={<RefreshCw className="size-3.5" />} loading={u.state === 'checking'} onClick={() => run(() => api.updateCheck())}>
+        {t('update.check')}
+      </Button>
+    )
+  }
+
+  return (
+    <Card>
+      <CardTitle icon={<RefreshCw className="size-4" />}>{t('update.title')}</CardTitle>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className={u.state === 'available' || u.state === 'ready' ? 'text-[14px] font-medium text-fg' : 'text-[13.5px] text-fg/90'}>{headline}</div>
+          <div className="mt-0.5 text-[12px] text-dim">
+            {t('update.current', { v: u.current })}
+            {u.checkedAt ? ` · ${t('update.checked', { time: fmtDate(u.checkedAt, lang) })}` : ''}
+          </div>
+        </div>
+        {action}
+      </div>
+      {u.state === 'downloading' && (
+        <div className="mt-4">
+          <ProgressBar value={u.percent} />
+          <div className="mt-1.5 flex justify-between text-[11.5px] text-dim">
+            <span>
+              {Math.round(u.percent * 100)}%{u.total ? ` · ${fmtBytes(u.total * u.percent)} / ${fmtBytes(u.total)}` : ''}
+            </span>
+            {u.bytesPerSecond > 0 && <span>{fmtBytes(u.bytesPerSecond)}/s</span>}
+          </div>
+        </div>
+      )}
+      {u.state === 'error' && u.error && <p className="mt-3 text-[12px] break-words text-rose">{u.error.slice(0, 300)}</p>}
+      {(u.state === 'available' || u.state === 'ready' || u.state === 'downloading') && u.notes && (
+        <div className="mt-4">
+          <div className="label mb-1.5">{t('update.notes')}</div>
+          <div className="max-h-44 overflow-y-auto rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-[12px] leading-relaxed whitespace-pre-wrap text-muted">{u.notes}</div>
+        </div>
+      )}
+      {u.state === 'ready' && busy && <p className="mt-3 text-[12px] text-amber">{t('update.busyWarn')}</p>}
+      <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">
+        <Toggle checked={s.autoCheckUpdates} onChange={(autoCheckUpdates) => attempt(() => api.setSettings({ autoCheckUpdates }))} label={t('update.auto')} />
+        {u.mode === 'portable' && <p className="text-[12px] text-dim">{t('update.portableHint')}</p>}
+        {u.mode === 'manual' && <p className="text-[12px] text-dim">{t('update.devHint')}</p>}
+        {packaged && (
+          <Button size="sm" variant="ghost" icon={<MonitorDown className="size-3.5" />} onClick={() => attempt(() => api.createShortcut(), t('settings.shortcut.done'))}>
+            {t('settings.shortcut')}
+          </Button>
+        )}
+      </div>
+    </Card>
   )
 }
