@@ -68,6 +68,7 @@ export const en = {
   'create.lyrics': 'Lyrics',
   'create.lyrics.placeholder': '[Verse]\nNeon lights are falling slow…\n\n[Chorus]\n…',
   'create.instrumental': 'Instrumental',
+  'create.noVocals': 'No vocals',
   'create.styles': 'Styles',
   'create.aiDraft': 'Write with AI',
   'create.aiDraft.hint': 'The language model turns your idea into a caption, lyrics and tempo',

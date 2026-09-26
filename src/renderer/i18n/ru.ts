@@ -67,6 +67,7 @@ export const ru: Dict = {
   'create.lyrics': 'Текст песни',
   'create.lyrics.placeholder': '[Verse]\nНочной город спит в огнях…\n\n[Chorus]\n…',
   'create.instrumental': 'Инструментал',
+  'create.noVocals': 'Без слов',
   'create.styles': 'Стили',
   'create.aiDraft': 'Написать с ИИ',
   'create.aiDraft.hint': 'Языковая модель превратит идею в описание стиля, текст и темп',

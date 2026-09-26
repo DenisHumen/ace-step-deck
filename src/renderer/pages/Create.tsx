@@ -7,6 +7,7 @@ import {
   FileAudio,
   Layers,
   Mic2,
+  MicOff,
   Music,
   Paintbrush,
   Palette,
@@ -49,6 +50,15 @@ interface Form {
 }
 
 const STORE_KEY = 'acedeck.create.v1'
+
+/** "No vocals" sits in the vocal-language lists too: picking it turns Instrumental on, picking a language turns it off. */
+const NO_VOCALS = 'none'
+const langValue = (p: GenerationParams) => (p.instrumental ? NO_VOCALS : p.vocal_language)
+const langPatch = (value: string): Partial<GenerationParams> => (value === NO_VOCALS ? { instrumental: true } : { vocal_language: value, instrumental: false })
+function langOptions(t: (k: string) => string, withNoVocals = true) {
+  const langs = VOCAL_LANGUAGES.map((l) => ({ value: l as string, label: l === 'unknown' ? t('common.auto') : l.toUpperCase() }))
+  return withNoVocals ? [langs[0], { value: NO_VOCALS, label: t('create.noVocals') }, ...langs.slice(1)] : langs
+}
 /** Bumped when a default changes in a way saved forms must pick up (v2: the LM no longer rewrites captions). */
 const FORM_VERSION = 2
 
@@ -240,11 +250,15 @@ export function CreatePage() {
                 </Chip>
               )}
               <label className="no-drag inline-flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] pr-1 pl-3.5 text-[12.5px] text-muted">
-                <Mic2 className="size-3.5" />
-                <select className="bg-transparent pr-1 text-fg outline-none" value={p.vocal_language} onChange={(e) => setP({ vocal_language: e.target.value })}>
-                  {VOCAL_LANGUAGES.map((l) => (
-                    <option key={l} value={l} className="bg-ink-800">
-                      {l === 'unknown' ? t('common.auto') : l.toUpperCase()}
+                {p.instrumental && f.mode !== 'stems' ? <MicOff className="size-3.5" /> : <Mic2 className="size-3.5" />}
+                <select
+                  className="bg-transparent pr-1 text-fg outline-none"
+                  value={f.mode === 'stems' ? p.vocal_language : langValue(p)}
+                  onChange={(e) => setP(f.mode === 'stems' ? { vocal_language: e.target.value } : langPatch(e.target.value))}
+                >
+                  {langOptions(t, f.mode !== 'stems').map((o) => (
+                    <option key={o.value} value={o.value} className="bg-ink-800">
+                      {o.label}
                     </option>
                   ))}
                 </select>
@@ -441,7 +455,7 @@ function SongCard({ p, setP }: { p: GenerationParams; setP: (x: Partial<Generati
             <Select value={p.time_signature} onChange={(time_signature) => setP({ time_signature })} options={[{ value: '', label: t('common.auto') }, { value: '2', label: '2/4' }, { value: '3', label: '3/4' }, { value: '4', label: '4/4' }, { value: '6', label: '6/8' }]} />
           </Field>
           <Field label={t('create.language')}>
-            <Select value={p.vocal_language} onChange={(vocal_language) => setP({ vocal_language })} options={VOCAL_LANGUAGES.map((l) => ({ value: l, label: l === 'unknown' ? t('common.auto') : l.toUpperCase() }))} />
+            <Select value={langValue(p)} onChange={(v) => setP(langPatch(v))} options={langOptions(t)} />
           </Field>
         </div>
       </div>

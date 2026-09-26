@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3 — 2026-09-26
+
+- **“No vocals” in the vocal-language list.** Next to *Auto / EN / RU…* there is now *No vocals* (*Без слов*) — pick it to make music without words; picking a language switches vocals back on. It stays in sync with the *Instrumental* toggle and is also in the *Song* card of Custom mode.
+
 ## 1.0.2 — 2026-09-26
 
 - **Simple mode keeps your genre.** ACE-Step's DiT only understands English captions and its LM retold long Russian descriptions as lo-fi hip-hop / pop with rap. AceDeck now:
