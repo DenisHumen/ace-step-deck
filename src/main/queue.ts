@@ -7,6 +7,7 @@ import { jobTitle, slugify, smoothProgress } from '@shared/logic'
 import { extractStyle, styleCaption } from '@shared/style'
 import { composeFromDescription } from './compose'
 import { engine } from './engine'
+import { gpu } from './gpu'
 import { library } from './library'
 import { numericOrNull, probeDuration } from './media'
 import { getSettings } from './settings'
@@ -182,20 +183,30 @@ class QueueManager {
         if (this.state.paused) return
         const job = this.state.jobs.find((j) => j.status === 'pending')
         if (!job) return
-        if (!engine.ready) {
-          if (engine.status.installed && (engine.status.state === 'stopped' || engine.status.state === 'error')) {
-            job.stage = 'Starting engine…'
-            this.changed()
-            await engine.start().catch(() => {})
-          }
-          if (!(await engine.waitReady(10 * 60 * 1000))) {
-            job.stage = 'Waiting for the engine'
-            this.changed()
-            return // resumed by engine:status → ready
-          }
+        // The GPU is shared with the video studio: wait for a running video render to finish.
+        if (gpu.busyWith === 'video') {
+          job.stage = 'Waiting for the GPU (video render)'
+          this.changed()
         }
-        ranJob = true
-        await this.runJob(job)
+        const release = await gpu.acquire('music')
+        try {
+          if (!engine.ready) {
+            if (engine.status.installed && (engine.status.state === 'stopped' || engine.status.state === 'error')) {
+              job.stage = 'Starting engine…'
+              this.changed()
+              await engine.start().catch(() => {})
+            }
+            if (!(await engine.waitReady(10 * 60 * 1000))) {
+              job.stage = 'Waiting for the engine'
+              this.changed()
+              return // resumed by engine:status → ready
+            }
+          }
+          ranJob = true
+          await this.runJob(job)
+        } finally {
+          release()
+        }
       }
     } finally {
       this.state.activeJobId = null

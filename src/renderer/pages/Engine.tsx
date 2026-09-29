@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import { Boxes, Cpu, FolderOpen, HardDrive, Power, RefreshCw, RotateCw, Server, Terminal, Activity, TriangleAlert } from 'lucide-react'
+import type { LogLine } from '@shared/types'
 import { useApp, attempt } from '../lib/store'
 import { api } from '../lib/api'
 import { useT } from '../i18n'
@@ -12,6 +13,7 @@ export function EnginePage() {
   const t = useT()
   const engine = useApp((s) => s.engine)
   const gpu = useApp((s) => s.system?.gpus[0])
+  const logs = useApp((s) => s.logs)
   const go = useApp((s) => s.go)
   const [updating, setUpdating] = useState(false)
   const [now, setNow] = useState(Date.now())
@@ -141,7 +143,13 @@ export function EnginePage() {
           </Card>
         </div>
       </div>
-      <LogConsole />
+      <LogConsole
+        logs={logs}
+        onClear={async () => {
+          await api.engineClearLogs()
+          useApp.setState({ logs: [] })
+        }}
+      />
     </div>
   )
 }
@@ -205,9 +213,8 @@ function StatusOrb({ color, active, busy }: { color: string; active: boolean; bu
   )
 }
 
-function LogConsole() {
+export function LogConsole({ logs, onClear, emptyText }: { logs: LogLine[]; onClear: () => void; emptyText?: string }) {
   const t = useT()
-  const logs = useApp((s) => s.logs)
   const [follow, setFollow] = useState(true)
   const [filter, setFilter] = useState<'all' | 'err'>('all')
   const box = useRef<HTMLDivElement>(null)
@@ -230,14 +237,7 @@ function LogConsole() {
               ⚠ warn/error
             </Button>
             <CopyButton text={shown.map((l) => `${new Date(l.t).toLocaleTimeString()} ${l.text}`).join('\n')} label={t('engine.logs.copy')} />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={async () => {
-                await api.engineClearLogs()
-                useApp.setState({ logs: [] })
-              }}
-            >
+            <Button size="sm" variant="ghost" onClick={onClear}>
               {t('engine.logs.clear')}
             </Button>
           </div>
@@ -247,7 +247,7 @@ function LogConsole() {
       </CardTitle>
       <div ref={box} className="console scroll-y h-[320px] rounded-2xl border border-white/[0.05] bg-black/40 p-4 select-text">
         {shown.length === 0 ? (
-          <div className="text-dim">{t('engine.logs.empty')}</div>
+          <div className="text-dim">{emptyText ?? t('engine.logs.empty')}</div>
         ) : (
           shown.map((l, i) => (
             <div

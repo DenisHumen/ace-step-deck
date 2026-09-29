@@ -15,6 +15,7 @@ import type {
   SystemInfo,
   Track,
 } from '@shared/types'
+import type { VideoClip, VideoEngineStatus, VideoInstallState, VideoJob, VideoJobSpec, VideoModelEntry, VideoModelInfo, VideoModelKind, VideoQueueState } from '@shared/video'
 
 interface Bridge {
   invoke: (method: string, ...args: unknown[]) => Promise<any>
@@ -117,7 +118,45 @@ export const api = {
 
   pickFolder: (defaultPath?: string) => call<string | null>('dialog.pickFolder', defaultPath),
   pickAudio: () => call<string | null>('dialog.pickAudio'),
+  pickModelFile: () => call<string | null>('dialog.pickModelFile'),
+
+  // video studio (ComfyUI + Wan 2.1)
+  videoStatus: () => call<VideoEngineStatus>('video.status'),
+  videoStart: () => call<void>('video.start'),
+  videoStop: () => call<void>('video.stop'),
+  videoRestart: () => call<void>('video.restart'),
+  videoLogs: () => call<LogLine[]>('video.logs'),
+  videoClearLogs: () => call<void>('video.clearLogs'),
+  videoOpenUi: () => call<void>('video.openUi'),
+  videoUseInstall: (path: string) => call<{ path: string; version: string | null }>('video.useInstall', path),
+  videoSetSettings: (patch: Partial<Settings>) => call<Settings>('video.setSettings', patch),
+  videoInstallState: () => call<VideoInstallState>('video.install.state'),
+  videoInstallStart: (path: string) => call<boolean>('video.install.start', path),
+  videoInstallCancel: () => call<void>('video.install.cancel'),
+  videoInstallDefaultPath: () => call<string>('video.install.defaultPath'),
+  videoModels: () => call<VideoModelInfo[]>('video.models.list'),
+  videoModelDownload: (kind: VideoModelKind, file: string) => call('video.models.download', kind, file),
+  videoModelCancel: (kind: VideoModelKind, file: string) => call('video.models.cancel', kind, file),
+  videoModelAddUrl: (url: string, kind: VideoModelKind) => call<VideoModelEntry>('video.models.addUrl', url, kind),
+  videoModelImport: (path: string, kind: VideoModelKind) => call<string>('video.models.import', path, kind),
+  videoModelRemove: (kind: VideoModelKind, file: string) => call('video.models.remove', kind, file),
+  videoQueueState: () => call<VideoQueueState>('video.queue.state'),
+  videoQueueAdd: (spec: VideoJobSpec) => call<VideoJob>('video.queue.add', spec),
+  videoQueueCancel: (id: string) => call('video.queue.cancel', id),
+  videoQueueRemove: (id: string) => call('video.queue.remove', id),
+  videoQueueRetry: (id: string) => call('video.queue.retry', id),
+  videoQueueDuplicate: (id: string) => call('video.queue.duplicate', id),
+  videoQueuePause: () => call('video.queue.pause'),
+  videoQueueResume: () => call('video.queue.resume'),
+  videoQueueClearFinished: () => call('video.queue.clearFinished'),
+  clips: () => call<VideoClip[]>('video.library.list'),
+  clipUpdate: (id: string, patch: Partial<Pick<VideoClip, 'title' | 'favorite'>>) => call<VideoClip>('video.library.update', id, patch),
+  clipRemove: (id: string) => call('video.library.remove', id),
+  clipSaveAs: (id: string) => call<string | null>('video.library.saveAs', id),
+  clipReveal: (id: string) => call('video.library.reveal', id),
+  openVideoFolder: () => call('video.library.openFolder'),
 }
 
 export const trackUrl = (id: string) => `acedeck-media://track/${encodeURIComponent(id)}`
 export const fileUrl = (path: string) => `acedeck-media://file/${encodeURIComponent(path)}`
+export const clipUrl = (id: string) => `acedeck-media://clip/${encodeURIComponent(id)}`

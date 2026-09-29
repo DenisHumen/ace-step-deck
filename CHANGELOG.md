@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0 — 2026-09-29
+
+- **Video studio (Wan 2.1 text-to-video).** A new *Video* section renders short clips locally through ComfyUI:
+  - *Video engine* installs everything in one click — ComfyUI, Python 3.12 with PyTorch CUDA 12.8 (RTX 50xx ready) and the Wan 2.1 text encoder, VAE and 1.3B model (~16 GB) — with per-step progress, resumable model downloads and a GPU self-test; or links an existing ComfyUI (git checkout or the portable build). Start / stop / restart, live log, *Open ComfyUI* for its own node editor.
+  - *Video studio*: prompt, size presets (16:9, 9:16, 1:1 and fast variants), length 1–7 s, model, number of clips, seed; advanced steps / CFG / shift / FPS / sampler / scheduler / custom size / negative prompt (Wan's own default) and up to four LoRAs with strength.
+  - Video queue with live stages (*loading → reading the prompt → rendering frames n/N → decoding → saving*), ETA learned from your GPU, cancel (interrupts ComfyUI), retry, duplicate, pause; it survives restarts and starts ComfyUI by itself.
+  - *Clips*: gallery with hover previews, player, search, favorites, *Reuse settings*, *Save as…*, *Show in folder*. MP4 (H.264) files land in `Videos\AceDeck` with a JSON sidecar.
+  - Model manager: add any Wan 2.1 1.3B fine-tune or LoRA by pasting a Hugging Face link, or import a local `.safetensors` (hard-linked, no copy); choose the default model.
+- **Music and video share the GPU.** Jobs take turns: a song waits while a clip renders and vice versa. A loaded music engine that would leave less than 9 GB of VRAM is stopped for the video and restarted automatically when the video queue is empty (toggle in *Video engine → Video settings*); ComfyUI unloads its models before music renders.
+- Low-VRAM mode (`--lowvram`) and a configurable ComfyUI port.
+- Measured on an RTX 5060 Ti 16 GB: 832×480, 2 s — 1.5 min including ComfyUI start; 5 s at 30 steps — ~8 min.
+- Unit tests: 35 (workflow graph, link parsing, parameter clamping, progress & ETA model).
+
 ## 1.0.3 — 2026-09-26
 
 - **“No vocals” in the vocal-language list.** Next to *Auto / EN / RU…* there is now *No vocals* (*Без слов*) — pick it to make music without words; picking a language switches vocals back on. It stays in sync with the *Instrumental* toggle and is also in the *Song* card of Custom mode.

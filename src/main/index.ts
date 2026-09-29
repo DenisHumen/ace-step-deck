@@ -14,6 +14,9 @@ import { defaultInstallPath } from './installer'
 import { detectInstalls } from './install-detect'
 import { updateSettings } from './settings'
 import { startUpdater } from './updater'
+import { videoEngine } from './video/engine'
+import { videoQueue } from './video/queue'
+import { videoLibrary } from './video/library'
 
 const isDev = !!process.env.VITE_DEV_SERVER_URL
 
@@ -29,17 +32,21 @@ const MIME: Record<string, string> = {
   '.opus': 'audio/ogg',
   '.m4a': 'audio/mp4',
   '.aac': 'audio/aac',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mkv': 'video/x-matroska',
 }
 
 // The renderer origin is http://localhost (dev) or file:// (prod), so media fetches are cross-origin.
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges' }
 
-/** Serves library tracks (and picked source audio) with HTTP Range support so seeking works. */
+/** Serves library tracks, video clips (and picked source audio) with HTTP Range support so seeking works. */
 function registerMediaProtocol(): void {
   protocol.handle('acedeck-media', async (request) => {
     const url = new URL(request.url)
     let file: string | undefined
     if (url.hostname === 'track') file = library.get(decodeURIComponent(url.pathname.slice(1)))?.file
+    else if (url.hostname === 'clip') file = videoLibrary.get(decodeURIComponent(url.pathname.slice(1)))?.file
     else if (url.hostname === 'file') file = decodeURIComponent(url.pathname.slice(1))
     if (!file || !MIME[extname(file).toLowerCase()] || !existsSync(file)) return new Response('not found', { status: 404 })
     const size = (await fsp.stat(file)).size
@@ -111,7 +118,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     app.setAppUserModelId('io.github.denishumen.acedeck')
     await loadSettings()
-    await Promise.all([library.load(), queue.load()])
+    await Promise.all([library.load(), queue.load(), videoLibrary.load(), videoQueue.load()])
 
     // First launch: adopt an existing ACE-Step checkout if we can find one.
     if (!getSettings().installPath) {
@@ -130,6 +137,7 @@ if (!app.requestSingleInstanceLock()) {
     registerIpc()
     createWindow()
     await engine.refreshInstall()
+    await videoEngine.refreshInstall()
     await startControlServer()
     startUpdater()
 
@@ -145,6 +153,14 @@ if (!app.requestSingleInstanceLock()) {
     else void engine.probeExternal()
     queue.kick()
 
+    let lastVideoState = videoEngine.status.state
+    on('video:status', (s) => {
+      const became = s.state === 'ready' && lastVideoState !== 'ready' && lastVideoState !== 'busy'
+      lastVideoState = s.state
+      if (became) setTimeout(() => videoQueue.kick(), 0)
+    })
+    videoQueue.kick()
+
     // Live system telemetry (GPU/VRAM) for the header and the Engine page.
     const tick = async () => {
       if (mainWindow && !mainWindow.isMinimized()) emit('system:update', await systemInfo(getSettings().installPath ?? defaultInstallPath()))
@@ -157,11 +173,12 @@ if (!app.requestSingleInstanceLock()) {
   app.on('before-quit', (e) => {
     if (quitting) return
     const shouldStop = getSettings().stopEngineOnExit && engine.running && !engine.status.external
+    const stopVideo = getSettings().stopEngineOnExit && videoEngine.running && !videoEngine.status.external
     e.preventDefault()
     quitting = true
     void (async () => {
       await stopControlServer().catch(() => {})
-      if (shouldStop) await engine.stop().catch(() => {})
+      await Promise.all([shouldStop ? engine.stop().catch(() => {}) : null, stopVideo ? videoEngine.stop().catch(() => {}) : null])
       app.quit()
     })()
   })

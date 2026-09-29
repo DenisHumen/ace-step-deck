@@ -1,4 +1,5 @@
 import type { GenerationParams, Settings } from './types'
+import { WAN_T2V_1_3B } from './video'
 
 export const ACE_STEP_REPO_GIT = 'https://github.com/ace-step/ACE-Step-1.5.git'
 export const ACE_STEP_REPO_ZIP = 'https://github.com/ace-step/ACE-Step-1.5/archive/refs/heads/main.zip'
@@ -34,7 +35,7 @@ export const MODEL_CATALOG: CatalogModel[] = [
   { name: 'acestep-5Hz-lm-4B', kind: 'lm', repo: 'ACE-Step/acestep-5Hz-lm-4B', approxGB: 8.0, bundled: false },
 ]
 
-export const DEFAULT_SETTINGS: Omit<Settings, 'outputDir' | 'language'> = {
+export const DEFAULT_SETTINGS: Omit<Settings, 'outputDir' | 'language' | 'videoOutputDir'> = {
   installPath: null,
   port: 8001,
   ditModel: 'acestep-v15-turbo',
@@ -51,6 +52,12 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'outputDir' | 'language'> = {
   onboarded: false,
   autoCheckUpdates: true,
   desktopShortcutDone: false,
+  videoInstallPath: null,
+  videoPort: 8188,
+  videoModel: WAN_T2V_1_3B,
+  videoCustomModels: [],
+  videoGpuSwap: true,
+  videoLowVram: false,
 }
 
 export const DEFAULT_PARAMS: GenerationParams = {

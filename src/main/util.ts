@@ -217,6 +217,50 @@ export async function download(
   }
 }
 
+/**
+ * Download into `<dest>.part`, continuing a previous partial download with an HTTP Range request,
+ * and rename to `dest` only when complete. Used for multi-GB model files.
+ */
+export async function downloadResumable(
+  url: string,
+  dest: string,
+  onProgress: (p: DownloadProgress) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  await fsp.mkdir(dirname(dest), { recursive: true })
+  const part = `${dest}.part`
+  const have = existsSync(part) ? (await fsp.stat(part)).size : 0
+  const res = await fetch(url, { redirect: 'follow', signal, headers: have ? { Range: `bytes=${have}-` } : {} })
+  if (res.status === 416 && have) {
+    // Already complete (the server has nothing past our last byte).
+    await fsp.rename(part, dest)
+    return
+  }
+  if (!res.ok || !res.body) throw new Error(`HTTP ${res.status} for ${url}`)
+  const resumed = res.status === 206
+  const start = resumed ? have : 0
+  const length = Number(res.headers.get('content-length')) || null
+  const total = length !== null ? start + length : null
+  const out = createWriteStream(part, { flags: resumed ? 'a' : 'w' })
+  let received = start
+  const started = Date.now()
+  const reader = res.body.getReader()
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      received += value.byteLength
+      if (!out.write(value)) await new Promise((r) => out.once('drain', r))
+      const secs = Math.max(0.001, (Date.now() - started) / 1000)
+      onProgress({ received, total, bytesPerSec: (received - start) / secs })
+    }
+  } finally {
+    await new Promise<void>((r) => out.end(r))
+  }
+  if (total !== null && received < total) throw new Error(`Download interrupted at ${formatBytes(received)} of ${formatBytes(total)}`)
+  await fsp.rename(part, dest)
+}
+
 /** Extract a .zip with the tar.exe that ships with Windows 10+ (bsdtar). */
 export async function extractZip(zip: string, destDir: string): Promise<void> {
   await fsp.mkdir(destDir, { recursive: true })

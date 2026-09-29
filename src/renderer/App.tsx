@@ -17,6 +17,9 @@ import {
   CircleAlert,
   CircleCheck,
   Info,
+  Clapperboard,
+  Film,
+  MonitorPlay,
 } from 'lucide-react'
 import type { PageId } from '@shared/types'
 import { useApp, attempt } from './lib/store'
@@ -34,6 +37,9 @@ import { ModelsPage } from './pages/Models'
 import { SetupPage } from './pages/Setup'
 import { SettingsPage } from './pages/Settings'
 import { ClaudePage } from './pages/Claude'
+import { VideoStudioPage } from './pages/VideoStudio'
+import { VideoLibraryPage } from './pages/VideoLibrary'
+import { VideoEnginePage } from './pages/VideoEngine'
 import { Logo } from './components/Logo'
 
 const NAV: { group: string; items: { id: PageId; icon: typeof Music2; label: string }[] }[] = [
@@ -43,6 +49,14 @@ const NAV: { group: string; items: { id: PageId; icon: typeof Music2; label: str
       { id: 'create', icon: Sparkles, label: 'nav.create' },
       { id: 'queue', icon: ListMusic, label: 'nav.queue' },
       { id: 'library', icon: LibraryIcon, label: 'nav.library' },
+    ],
+  },
+  {
+    group: 'nav.group.video',
+    items: [
+      { id: 'video', icon: Clapperboard, label: 'nav.video' },
+      { id: 'videoLibrary', icon: Film, label: 'nav.videoLibrary' },
+      { id: 'videoEngine', icon: MonitorPlay, label: 'nav.videoEngine' },
     ],
   },
   {
@@ -68,6 +82,7 @@ function Sidebar() {
   const page = useApp((s) => s.page)
   const go = useApp((s) => s.go)
   const pending = useApp((s) => s.queue.jobs.filter((j) => j.status === 'pending' || j.status === 'running').length)
+  const videoPending = useApp((s) => s.videoQueue.jobs.filter((j) => j.status === 'pending' || j.status === 'running').length)
   return (
     <aside className="glass-strong relative z-10 flex w-[248px] shrink-0 flex-col border-r border-white/[0.06] px-4 pb-4 max-[1150px]:w-[220px] max-[1150px]:px-3">
       <div className="drag flex h-[64px] items-center gap-2.5 px-2 pt-2">
@@ -101,6 +116,9 @@ function Sidebar() {
                   <span className="font-display text-[13.5px] font-medium">{t(it.label)}</span>
                   {it.id === 'queue' && pending > 0 && (
                     <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-magenta/90 px-1.5 text-[11px] font-semibold text-white">{pending}</span>
+                  )}
+                  {it.id === 'video' && videoPending > 0 && (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-cyan/80 px-1.5 text-[11px] font-semibold text-ink-950">{videoPending}</span>
                   )}
                 </button>
               )
@@ -184,6 +202,7 @@ function TopBar() {
   const tracks = useApp((s) => s.tracks.length)
   const gpu = useApp((s) => s.system?.gpus[0])
   const engine = useApp((s) => s.engine)
+  const video = useApp((s) => s.videoEngine)
   const vram = gpu ? gpu.memoryUsedMB / Math.max(1, gpu.memoryTotalMB) : null
   return (
     <header className="drag relative z-10 flex h-[64px] shrink-0 items-center gap-3 pr-[150px] pl-8 max-[1150px]:pl-5">
@@ -214,6 +233,13 @@ function TopBar() {
           <Music2 className="size-3.5 text-magenta" />
           {t('top.songs', { n: tracks })}
         </button>
+        {video && (isUp(video.state) || isTransitional(video.state)) && (
+          <button onClick={() => go('videoEngine')} className="no-drag glass flex h-9 items-center gap-2 rounded-full px-3.5 text-[12.5px] whitespace-nowrap text-muted hover:text-fg" title="ComfyUI">
+            <Film className="size-3.5 text-cyan" />
+            <StatusDot tone={engineTone(video.state)} pulse={isUp(video.state)} />
+            <span className="max-[1250px]:hidden">{t(`video.state.${video.state}`)}</span>
+          </button>
+        )}
         <button onClick={() => go('engine')} className="no-drag glass flex h-9 items-center gap-2 rounded-full px-3.5 text-[12.5px] whitespace-nowrap text-muted hover:text-fg">
           <StatusDot tone={engineTone(engine?.state)} pulse={isUp(engine?.state)} />
           {t(`state.${engine?.state ?? 'not-installed'}`)}
@@ -255,6 +281,9 @@ const PAGES: Record<PageId, () => React.JSX.Element | null> = {
   setup: SetupPage,
   settings: SettingsPage,
   claude: ClaudePage,
+  video: VideoStudioPage,
+  videoLibrary: VideoLibraryPage,
+  videoEngine: VideoEnginePage,
 }
 
 export function App() {

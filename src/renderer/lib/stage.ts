@@ -12,6 +12,7 @@ export function stageKey(stage: string): string | null {
   if (/^running$/.test(s)) return 'stage.compose'
   if (/starting engine/.test(s)) return 'stage.startEngine'
   if (/waiting for the engine/.test(s)) return 'stage.waitEngine'
+  if (/waiting for the gpu/.test(s)) return 'stage.waitGpu'
   if (/^queued$/.test(s)) return 'stage.queued'
   if (/^done$/.test(s)) return 'stage.done'
   return null

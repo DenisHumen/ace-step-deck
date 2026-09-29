@@ -12,6 +12,7 @@ function defaults(): Settings {
     ...DEFAULT_SETTINGS,
     language: app.getLocale().toLowerCase().startsWith('ru') ? 'ru' : 'en',
     outputDir: join(app.getPath('music'), 'AceDeck'),
+    videoOutputDir: join(app.getPath('videos'), 'AceDeck'),
   }
 }
 

@@ -1,4 +1,5 @@
 // Contract shared by the Electron main process, the renderer and the MCP server.
+import type { VideoClip, VideoEngineStatus, VideoInstallState, VideoModelEntry, VideoModelInfo, VideoQueueState } from './video'
 
 export type Lang = 'en' | 'ru'
 
@@ -181,8 +182,8 @@ export interface Track {
 export type InstallStepId = 'system' | 'uv' | 'source' | 'deps' | 'models' | 'config' | 'verify'
 export type StepStatus = 'pending' | 'running' | 'done' | 'error' | 'skipped'
 
-export interface InstallStep {
-  id: InstallStepId
+export interface InstallStep<Id extends string = InstallStepId> {
+  id: Id
   status: StepStatus
   /** null = indeterminate */
   progress: number | null
@@ -190,12 +191,12 @@ export interface InstallStep {
   error?: string
 }
 
-export interface InstallState {
+export interface InstallState<Id extends string = InstallStepId> {
   running: boolean
   finished: boolean
   cancelled: boolean
   targetPath: string | null
-  steps: InstallStep[]
+  steps: InstallStep<Id>[]
   overall: number
   error: string | null
   startedAt: number | null
@@ -266,6 +267,18 @@ export interface Settings {
   autoCheckUpdates: boolean
   /** The first-run desktop shortcut was created (or already existed) — never recreate it behind the user's back. */
   desktopShortcutDone: boolean
+  // ── Video (ComfyUI + Wan 2.1) ──
+  videoInstallPath: string | null
+  videoPort: number
+  videoOutputDir: string
+  /** Diffusion model preselected in the video studio. */
+  videoModel: string
+  /** Models the user added from a link. */
+  videoCustomModels: VideoModelEntry[]
+  /** Stop the music engine while a video renders when VRAM is short (restarted afterwards). */
+  videoGpuSwap: boolean
+  /** Start ComfyUI with --lowvram (for 8 GB cards). */
+  videoLowVram: boolean
 }
 
 export interface UpdateStatus {
@@ -305,7 +318,7 @@ export interface SampleResult {
   instrumental?: boolean
 }
 
-export type PageId = 'create' | 'queue' | 'library' | 'engine' | 'diagnostics' | 'models' | 'setup' | 'settings' | 'claude'
+export type PageId = 'create' | 'queue' | 'library' | 'engine' | 'diagnostics' | 'models' | 'setup' | 'settings' | 'claude' | 'video' | 'videoLibrary' | 'videoEngine'
 
 export interface EventMap {
   'engine:status': EngineStatus
@@ -319,4 +332,10 @@ export interface EventMap {
   'system:update': SystemInfo
   'ui:navigate': PageId
   'update:status': UpdateStatus
+  'video:status': VideoEngineStatus
+  'video:log': LogLine
+  'video:queue': VideoQueueState
+  'video:library': VideoClip[]
+  'video:install': VideoInstallState
+  'video:models': VideoModelInfo[]
 }

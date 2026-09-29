@@ -180,24 +180,10 @@ class Installer {
       this.log(`uv found: ${found}`)
       return 'skipped'
     }
-    const zip = join(app.getPath('temp'), `uv-${uid(4)}.zip`)
     this.log(`Downloading uv from ${UV_ZIP_URL}`)
     this.abort = new AbortController()
-    await download(
-      UV_ZIP_URL,
-      zip,
-      (p) =>
-        this.setStep('uv', {
-          progress: p.total ? (p.received / p.total) * 0.9 : null,
-          detail: `${formatBytes(p.received)}${p.total ? ` / ${formatBytes(p.total)}` : ''} · ${formatBytes(p.bytesPerSec)}/s`,
-        }),
-      this.abort.signal,
-    )
+    this.uvPath = await downloadUv((progress, detail) => this.setStep('uv', { progress, detail }), this.abort.signal)
     this.checkCancel()
-    await extractZip(zip, toolsDir())
-    await fsp.rm(zip, { force: true })
-    this.uvPath = existsSync(join(toolsDir(), 'uv.exe')) ? join(toolsDir(), 'uv.exe') : await findUv()
-    if (!this.uvPath) throw new Error('uv.exe not found after extraction')
     this.setStep('uv', { detail: this.uvPath })
     this.log(`uv installed: ${this.uvPath}`)
     return 'done'
@@ -417,6 +403,22 @@ class Installer {
     this.log(`Verified: PyTorch ${info.torch}, CUDA ${info.cuda ? 'OK' : 'unavailable'}${info.gpu ? `, ${info.gpu}` : ''}`)
     return 'done'
   }
+}
+
+/** Fetch uv into AceDeck's tools folder (shared by the ACE-Step and the video installers). */
+export async function downloadUv(onProgress: (progress: number | null, detail: string) => void, signal?: AbortSignal): Promise<string> {
+  const zip = join(app.getPath('temp'), `uv-${uid(4)}.zip`)
+  await download(
+    UV_ZIP_URL,
+    zip,
+    (p) => onProgress(p.total ? (p.received / p.total) * 0.9 : null, `${formatBytes(p.received)}${p.total ? ` / ${formatBytes(p.total)}` : ''} · ${formatBytes(p.bytesPerSec)}/s`),
+    signal,
+  )
+  await extractZip(zip, toolsDir())
+  await fsp.rm(zip, { force: true })
+  const uv = existsSync(join(toolsDir(), 'uv.exe')) ? join(toolsDir(), 'uv.exe') : await findUv()
+  if (!uv) throw new Error('uv.exe not found after extraction')
+  return uv
 }
 
 let cachedMainBytes: number | null = null

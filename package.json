@@ -1,8 +1,8 @@
 {
   "name": "ace-step-deck",
   "productName": "AceDeck",
-  "version": "1.0.3",
-  "description": "AceDeck — desktop studio & control deck for ACE-Step 1.5 local AI music generation: one-click install, generation queue, batch songs, cover & repaint, engine control, stability test and Claude MCP.",
+  "version": "1.1.0",
+  "description": "AceDeck — desktop studio & control deck for ACE-Step 1.5 local AI music generation and Wan 2.1 text-to-video: one-click install, generation queue, batch songs, cover & repaint, video studio on ComfyUI, engine control, stability test and Claude MCP.",
   "author": {
     "name": "DenisHumen",
     "url": "https://github.com/DenisHumen"
@@ -22,7 +22,10 @@
     "suno-alternative",
     "electron",
     "mcp",
-    "claude"
+    "claude",
+    "wan-2.1",
+    "text-to-video",
+    "comfyui"
   ],
   "main": "out/main/index.cjs",
   "private": true,

@@ -4,9 +4,9 @@
 
 # AceDeck
 
-**The desktop studio & control deck for [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) — generate full songs with vocals locally on your own GPU.**
+**The desktop studio & control deck for [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) — generate full songs with vocals locally on your own GPU. Now with a Wan 2.1 video studio.**
 
-One-click install · Generation queue & batches · Cover / Repaint / Stems · Engine control · Stability check · Claude MCP
+One-click install · Generation queue & batches · Cover / Repaint / Stems · Text-to-video · Engine control · Stability check · Claude MCP
 
 [![Release](https://img.shields.io/github/v/release/DenisHumen/ace-step-deck?style=for-the-badge&color=c04cf2&label=release)](https://github.com/DenisHumen/ace-step-deck/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/DenisHumen/ace-step-deck/total?style=for-the-badge&color=f043c6)](https://github.com/DenisHumen/ace-step-deck/releases)
@@ -34,6 +34,7 @@ ACE-Step 1.5 is one of the best open music generation models — a local, free a
 | | |
 |---|---|
 | 🎹 **Full ACE-Step 1.5 studio** | Simple mode (describe the song in any language — AceDeck turns it into the English style caption ACE-Step understands, shows what the engine will hear and keeps your genre with *Exact style*; the LM writes the lyrics), Custom mode (style tags + lyrics with `[Verse]`/`[Chorus]` helpers), **Cover / remix**, **Repaint** a section, **Stems** (extract / add / complete tracks). Every engine parameter is exposed: duration, BPM, key, time signature, vocal language, DiT & LM model, thinking, steps, guidance, seed, sampler, shift, ADG, CFG interval, LM temperature/CFG/top-k/top-p, negative prompt, output format (MP3/FLAC/WAV/Opus/AAC). |
+| 🎬 **Video studio** <sup>new</sup> | Text-to-video with **Wan 2.1** rendered by a local **ComfyUI** that AceDeck installs (ComfyUI + PyTorch CUDA + ~10 GB of Wan models, one click), starts and feeds. Size presets, 1–7 s clips, steps / CFG / shift / sampler, negative prompt, up to 4 LoRAs, several clips per job with their own seeds, a video queue with live frame progress and ETA, and a **Clips** gallery with player. Add community Wan 2.1 1.3B fine-tunes and LoRAs by pasting a Hugging Face link. Music and video **share one GPU**: jobs take turns and the music engine is paused and restarted automatically when VRAM is short. |
 | ✍️ **AI helpers** | *Write with AI* turns an idea into caption, lyrics, tempo and key; *Enhance* polishes your lyrics; *Surprise me* fills in a random example. |
 | 📋 **Generation queue** | Queue any number of jobs, set **how many songs** each job should produce and how many are rendered per pass. Reorder, cancel, retry (resumes where it stopped), duplicate, pause. The queue survives restarts and parks itself if the engine goes down. |
 | 📈 **Live progress** | Progress ring with real engine stages (*composing → planning melody → rendering → decoding*), per-pass progress bar, ETA and the engine's live log line. |
@@ -70,6 +71,10 @@ ACE-Step 1.5 is one of the best open music generation models — a local, free a
     <td><img src="docs/screenshots/en/models.png" alt="Models" /><p align="center"><b>Models</b> — download & choose defaults</p></td>
     <td><img src="docs/screenshots/en/settings.png" alt="Settings" /><p align="center"><b>Settings</b></p></td>
   </tr>
+  <tr>
+    <td><img src="docs/screenshots/en/video.png" alt="Video studio" /><p align="center"><b>Video studio</b> — Wan 2.1 text-to-video with a live queue</p></td>
+    <td><img src="docs/screenshots/en/clips.png" alt="Clips" /><p align="center"><b>Clips</b> — gallery with hover previews & player</p></td>
+  </tr>
 </table>
 
 ## 🚀 Quick start
@@ -78,7 +83,8 @@ ACE-Step 1.5 is one of the best open music generation models — a local, free a
 2. Run it. Windows SmartScreen may warn because the build is not code-signed → *More info* → *Run anyway*.
 3. On first launch AceDeck looks for an existing ACE-Step 1.5 checkout. If none is found, open **Install**, pick a folder and press **Install ACE-Step** — it downloads ~3 GB of Python packages and ~10 GB of models (≈ 5–15 min depending on your connection).
 4. Press **Start** in the sidebar, go to **Create**, describe a song and hit **Create**. Songs land in `Music\AceDeck`.
-5. New versions arrive inside the app: a badge appears in the sidebar and **Settings → Updates** downloads and installs them (1.0.0/1.0.1 have no updater — install 1.0.2 once by hand).
+5. **Video:** open **Video engine → Install video engine** (ComfyUI + PyTorch + ~10 GB of Wan 2.1 models, ≈ 5–10 min), then describe a scene in **Video studio**. Clips land in `Videos\AceDeck`.
+6. New versions arrive inside the app: a badge appears in the sidebar and **Settings → Updates** downloads and installs them (1.0.0/1.0.1 have no updater — install 1.0.2 once by hand).
 
 > Already have ACE-Step 1.5? AceDeck auto-detects common locations (e.g. `%USERPROFILE%\ACE-Step-1.5`) or you can point it to any folder in **Install → Use an existing installation**.
 
@@ -94,6 +100,8 @@ ACE-Step 1.5 is one of the best open music generation models — a local, free a
 | Network | first install only (~13 GB) | |
 
 Measured on an **RTX 5060 Ti 16 GB**: engine start + model load ≈ 30 s; a 30-second song with LM planning ≈ 40 s end-to-end; a 15-second instrumental ≈ 10–16 s. Full stress test: *Stable, 100/100*.
+
+**Video studio** (optional): +~16 GB of disk, 8 GB VRAM minimum (12 GB+ recommended). On the same RTX 5060 Ti a 2-second 832×480 clip renders in ≈ 1.5 min including ComfyUI start, a 5-second one at 30 steps in ≈ 8 min; peak VRAM ≈ 12 GB.
 
 ## 🤖 Control it with Claude (MCP)
 
@@ -228,6 +236,10 @@ Change the API port in Settings. If another ACE-Step server is already running o
 Use “Add or remove programs”. The ACE-Step folder (with ~17 GB of Python packages and models) is yours — delete it manually if you no longer need it. Songs stay in <code>Music\AceDeck</code>.
 </details>
 
+<details><summary><b>Which video models can I use?</b></summary>
+Any Wan 2.1 <b>1.3B text-to-video</b> checkpoint in ComfyUI format (a single <code>.safetensors</code>) and Wan 2.1 1.3B LoRAs. Paste the Hugging Face link on <b>Video engine → Add a model</b> or import a file you already have. Model licenses are the model authors' — check them before you use or share the output.
+</details>
+
 ## 🗺 Roadmap
 
 - [ ] macOS (Apple Silicon / MLX) and Linux builds
@@ -236,15 +248,18 @@ Use “Add or remove programs”. The ACE-Step folder (with ~17 GB of Python pac
 - [ ] Code signing
 - [ ] Playlists, tags and export to DAW stems
 - [ ] Multi-GPU / multi-slot model switching
+- [x] Text-to-video (Wan 2.1)
+- [ ] Image-to-video and video MCP tools
 
 ## 🙏 Credits
 
 - [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) by the ACE-Step team — the model and inference server that make all of this possible.
+- [Wan 2.1](https://github.com/Wan-Video/Wan2.1) by the Wan team and [ComfyUI](https://github.com/comfyanonymous/ComfyUI) — the video model and the engine that runs it.
 - Design inspired by Dribbble/Pinterest concepts: the “ElevMuse — AI music generator” dashboard and the “AI Mastering Engine” status panel.
 - Built with [Electron](https://www.electronjs.org), [React](https://react.dev), [Tailwind CSS](https://tailwindcss.com), [wavesurfer.js](https://wavesurfer.xyz), [Lucide](https://lucide.dev), [Motion](https://motion.dev) and the [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk).
 
 ## 📄 License
 
-[MIT](LICENSE) © 2026 DenisHumen. AceDeck is an independent project and is not affiliated with the ACE-Step team. Generated music is subject to the ACE-Step model license and your local laws.
+[MIT](LICENSE) © 2026 DenisHumen. AceDeck is an independent project and is not affiliated with the ACE-Step team. Generated music and video are subject to the licenses of the models you use and your local laws.
 
 <div align="center"><sub>If AceDeck saves you time, a ⭐ helps other people find it.</sub></div>

@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { existsSync } from 'node:fs'
+import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import type { AppInfo, JobSpec, Settings } from '@shared/types'
 import { engine } from './engine'
@@ -16,6 +17,12 @@ import { controlFile, startControlServer, stopControlServer } from './control-se
 import { run } from './util'
 import { composeFromDescription } from './compose'
 import { checkForUpdates, createDesktopShortcut, downloadUpdate, installUpdate, openReleasePage, updateStatus } from './updater'
+import type { VideoJobSpec, VideoModelKind } from '@shared/video'
+import { inspectComfy, videoEngine } from './video/engine'
+import { defaultVideoInstallPath, videoInstaller } from './video/installer'
+import { addVideoModelUrl, cancelVideoModel, downloadVideoModel, importVideoModelFile, listVideoModels, removeVideoModel } from './video/models'
+import { videoQueue } from './video/queue'
+import { videoLibrary } from './video/library'
 
 const win = () => BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null
 
@@ -153,7 +160,83 @@ const handlers: Record<string, (...args: any[]) => unknown> = {
   'ai.formatInput': (caption: string, lyrics: string, meta: Record<string, unknown>) => engine.api.formatInput(caption, lyrics, meta),
   'ai.randomSample': (type: 'simple_mode' | 'custom_mode') => engine.api.randomSample(type),
 
+  // video: ComfyUI engine
+  'video.status': () => videoEngine.status,
+  'video.start': () => videoEngine.start(),
+  'video.stop': () => videoEngine.stop(),
+  'video.restart': () => videoEngine.restart(),
+  'video.logs': () => videoEngine.getLogs(),
+  'video.clearLogs': () => videoEngine.clearLogs(),
+  'video.openUi': () => {
+    if (videoEngine.ready) return shell.openExternal(`http://127.0.0.1:${getSettings().videoPort}`)
+  },
+  'video.useInstall': async (raw: string) => {
+    const insp = await inspectComfy(raw)
+    if (!insp.source) throw new Error('This folder is not a ComfyUI checkout')
+    if (!insp.python) throw new Error('No Python environment next to this ComfyUI (.venv, venv or python_embeded)')
+    if (videoEngine.running) await videoEngine.stop()
+    await updateSettings({ videoInstallPath: insp.path })
+    await videoEngine.refreshInstall()
+    return insp
+  },
+  'video.setSettings': async (patch: Partial<Settings>) => {
+    const before = getSettings()
+    const s = await updateSettings(patch)
+    const restart = (patch.videoPort !== undefined && patch.videoPort !== before.videoPort) || (patch.videoLowVram !== undefined && patch.videoLowVram !== before.videoLowVram)
+    if (restart && videoEngine.running && !videoEngine.status.external) void videoEngine.restart().catch(() => {})
+    return s
+  },
+
+  // video: installer
+  'video.install.state': () => videoInstaller.state,
+  'video.install.start': async (path: string) => {
+    const started = videoInstaller.start(path)
+    const early = await Promise.race([started.then(() => null, (e) => e), new Promise((r) => setTimeout(() => r(null), 50))])
+    if (early) throw early
+    return true
+  },
+  'video.install.cancel': () => videoInstaller.cancel(),
+  'video.install.defaultPath': () => getSettings().videoInstallPath ?? defaultVideoInstallPath(),
+
+  // video: models
+  'video.models.list': () => listVideoModels(),
+  'video.models.download': (kind: VideoModelKind, file: string) => {
+    void downloadVideoModel(kind, file).catch(() => {})
+    return true
+  },
+  'video.models.cancel': (kind: VideoModelKind, file: string) => cancelVideoModel(kind, file),
+  'video.models.addUrl': (url: string, kind: VideoModelKind) => addVideoModelUrl(url, kind),
+  'video.models.import': (path: string, kind: VideoModelKind) => importVideoModelFile(path, kind),
+  'video.models.remove': (kind: VideoModelKind, file: string) => removeVideoModel(kind, file),
+
+  // video: queue + library
+  'video.queue.state': () => videoQueue.state,
+  'video.queue.add': (spec: VideoJobSpec) => videoQueue.add({ ...spec, source: 'ui' }),
+  'video.queue.cancel': (id: string) => videoQueue.cancel(id),
+  'video.queue.remove': (id: string) => videoQueue.remove(id),
+  'video.queue.retry': (id: string) => videoQueue.retry(id),
+  'video.queue.duplicate': (id: string) => videoQueue.duplicate(id),
+  'video.queue.pause': () => videoQueue.setPaused(true),
+  'video.queue.resume': () => videoQueue.setPaused(false),
+  'video.queue.clearFinished': () => videoQueue.clearFinished(),
+  'video.library.list': () => videoLibrary.list(),
+  'video.library.update': (id: string, patch: any) => videoLibrary.update(id, patch),
+  'video.library.remove': (id: string) => videoLibrary.remove(id),
+  'video.library.saveAs': (id: string) => videoLibrary.saveAs(id, win()),
+  'video.library.reveal': (id: string) => videoLibrary.reveal(id),
+  'video.library.openFolder': async () => {
+    const dir = getSettings().videoOutputDir
+    await mkdir(dir, { recursive: true })
+    return shell.openPath(dir)
+  },
+
   // dialogs
+  'dialog.pickModelFile': async () => {
+    const w = win()
+    const opts: Electron.OpenDialogOptions = { properties: ['openFile'], filters: [{ name: 'Safetensors', extensions: ['safetensors'] }] }
+    const r = w ? await dialog.showOpenDialog(w, opts) : await dialog.showOpenDialog(opts)
+    return r.canceled ? null : r.filePaths[0]
+  },
   'dialog.pickFolder': async (defaultPath?: string) => {
     const w = win()
     const opts: Electron.OpenDialogOptions = { properties: ['openDirectory', 'createDirectory'], defaultPath }
